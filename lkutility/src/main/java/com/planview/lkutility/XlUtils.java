@@ -37,6 +37,37 @@ public class XlUtils {
 	 * First put all the spreadsheet related routines here:
 	 */
 
+	public static InternalConfig setConfig(InternalConfig config, Row row, HashMap<String, Integer> fieldMap) {
+		config.source = new Access(
+				row.getCell(fieldMap.get(InternalConfig.SOURCE_URL_COLUMN)).getStringCellValue(),
+				row.getCell(fieldMap.get(InternalConfig.SOURCE_BOARDNAME_COLUMN)).getStringCellValue(),
+				row.getCell(fieldMap.get(InternalConfig.SOURCE_APIKEY_COLUMN)).getStringCellValue());
+		config.destination = new Access(
+				row.getCell(fieldMap.get(InternalConfig.DESTINATION_URL_COLUMN)).getStringCellValue(),
+				row.getCell(fieldMap.get(InternalConfig.DESTINATION_BOARDNAME_COLUMN)).getStringCellValue(),
+				row.getCell(fieldMap.get(InternalConfig.DESTINATION_APIKEY_COLUMN)).getStringCellValue());
+
+		if (config.ignoreCards){
+			// Find if column "Import Ignore" exists
+			Integer ignCol = XlUtils.findColumnFromSheet(config.wb.getSheet("Config"), ColNames.IGNORE_LIST);
+			if (ignCol != null) {
+				Cell cl = row.getCell(ignCol);
+				if (cl != null) {
+					String typesString = row.getCell(ignCol).getStringCellValue();
+					// Does the cell have anything in it?
+					if (typesString != null) {
+						config.ignTypes = typesString.split(",");
+						//Trim all whitespace that the user might have left in
+						for (int i = 0; i < config.ignTypes.length; i++){
+							config.ignTypes[i] = config.ignTypes[i].trim();
+						}
+					}
+				}
+			}
+		}
+		return config;
+	}
+
 	public static ArrayList<Row> getRowsByStringValue(InternalConfig cfg, XSSFSheet sht, String name, String value) {
 		ArrayList<Row> list = new ArrayList<>();
 
@@ -153,7 +184,7 @@ public class XlUtils {
 		// First, find the column that the "Day Delta" info is in
 		int dayCol = -1;
 		int td = 0;
-	
+
 		while (frtc.hasNext()) {
 			Cell tc = frtc.next();
 			if (!tc.getStringCellValue().equals(name)) {
@@ -165,6 +196,7 @@ public class XlUtils {
 		}
 		return dayCol;
 	}
+
 	public static Integer findColumnFromSheet(XSSFSheet sht, String name) {
 		Iterator<Row> row = sht.iterator();
 		if (!row.hasNext()) {
@@ -178,49 +210,49 @@ public class XlUtils {
 		return col;
 	}
 
-    public static Boolean parseRow(Row drRow, Configuration cfg, Field[] p, HashMap<String, Object> fieldMap,
-            ArrayList<String> cols) {
-        String cv = drRow.getCell((int) (fieldMap.get(cols.get(0)))).getStringCellValue();
-        if (cv != null) {
+	public static Boolean parseRow(Row drRow, Configuration cfg, Field[] p, HashMap<String, Object> fieldMap,
+			ArrayList<String> cols) {
+		String cv = drRow.getCell((int) (fieldMap.get(cols.get(0)))).getStringCellValue();
+		if (cv != null) {
 
-            for (int i = 0; i < cols.size(); i++) {
-                String idx = cols.get(i);
-                Object obj = fieldMap.get(idx);
-                String val = obj.toString();
-                try {
-                    Cell cell = drRow.getCell(Integer.parseInt(val));
+			for (int i = 0; i < cols.size(); i++) {
+				String idx = cols.get(i);
+				Object obj = fieldMap.get(idx);
+				String val = obj.toString();
+				try {
+					Cell cell = drRow.getCell(Integer.parseInt(val));
 
-                    if (cell != null) {
-                        switch (cell.getCellType()) {
-                            case STRING:
-                                // When you copy'n'paste on WIndows, it sometimes picks up the whitespace too -
-                                // so remove it.
-                                p[i].set(cfg,
-                                        (cell != null ? drRow.getCell(Integer.parseInt(val)).getStringCellValue().trim()
-                                                : ""));
-                                break;
-                            case NUMERIC:
-                                p[i].set(cfg, (cell != null ? drRow.getCell(Integer.parseInt(val)).getNumericCellValue()
-                                        : ""));
-                                break;
-                            default:
-                                break;
-                        }
-                    } else {
-                        p[i].set(cfg, (p[i].getType().equals(String.class)) ? "" : 0.0);
-                    }
+					if (cell != null) {
+						switch (cell.getCellType()) {
+							case STRING:
+								// When you copy'n'paste on WIndows, it sometimes picks up the whitespace too -
+								// so remove it.
+								p[i].set(cfg,
+										(cell != null ? drRow.getCell(Integer.parseInt(val)).getStringCellValue().trim()
+												: ""));
+								break;
+							case NUMERIC:
+								p[i].set(cfg, (cell != null ? drRow.getCell(Integer.parseInt(val)).getNumericCellValue()
+										: ""));
+								break;
+							default:
+								break;
+						}
+					} else {
+						p[i].set(cfg, (p[i].getType().equals(String.class)) ? "" : 0.0);
+					}
 
-                } catch (IllegalArgumentException | IllegalAccessException e) {
-                    d.p(Debug.ERROR, "Conversion error on \"%s\": Verify cell type in Excel\n %s\n", idx,
-                            e.getMessage());
-                    System.exit(12);
-                }
+				} catch (IllegalArgumentException | IllegalAccessException e) {
+					d.p(Debug.ERROR, "Conversion error on \"%s\": Verify cell type in Excel\n %s\n", idx,
+							e.getMessage());
+					System.exit(12);
+				}
 
-            }
-            return true;
-        }
-        return false;
-    }
+			}
+			return true;
+		}
+		return false;
+	}
 
 	public static String findColumnLetterFromSheet(XSSFSheet sht, String name) {
 		Iterator<Row> row = sht.iterator();
@@ -345,32 +377,30 @@ public class XlUtils {
 		}
 	}
 
-	
-
-	// private static ArrayList<Lane> findLanesFromParentId(Lane[] lanes, String id) {
-	// 	ArrayList<Lane> ln = new ArrayList<>();
-	// 	for (int i = 0; i < lanes.length; i++) {
-	// 		if (lanes[i].parentLaneId != null) {
-	// 			if (lanes[i].parentLaneId.equals(id)) {
-	// 				ln.add(lanes[i]);
-	// 			}
-	// 		}
-	// 	}
-	// 	return ln;
+	// private static ArrayList<Lane> findLanesFromParentId(Lane[] lanes, String id)
+	// {
+	// ArrayList<Lane> ln = new ArrayList<>();
+	// for (int i = 0; i < lanes.length; i++) {
+	// if (lanes[i].parentLaneId != null) {
+	// if (lanes[i].parentLaneId.equals(id)) {
+	// ln.add(lanes[i]);
+	// }
+	// }
+	// }
+	// return ln;
 	// }
 
-	
-
-	// private static ArrayList<String> getParentLaneIds( ArrayList<Lane> allLanes, ArrayList<Lane> lanes){
-	// 	ArrayList<String> foundName = new ArrayList<>();
-	// 	Iterator<Lane> lIter = lanes.iterator();
-	// 	while (lIter.hasNext()) {
-	// 		Lane lane = lIter.next();
-	// 		if (lane.name.equals(laneName)){
-	// 			foundName.add(findLaneFromId(allLanes, lane.parentLaneId);
-	// 		}
-	// 	}
-	// 	return foundName;
+	// private static ArrayList<String> getParentLaneIds( ArrayList<Lane> allLanes,
+	// ArrayList<Lane> lanes){
+	// ArrayList<String> foundName = new ArrayList<>();
+	// Iterator<Lane> lIter = lanes.iterator();
+	// while (lIter.hasNext()) {
+	// Lane lane = lIter.next();
+	// if (lane.name.equals(laneName)){
+	// foundName.add(findLaneFromId(allLanes, lane.parentLaneId);
+	// }
+	// }
+	// return foundName;
 	// }
 
 	/**
@@ -617,10 +647,14 @@ public class XlUtils {
 	}
 
 	/**
-	 * Scan through the list of source boards, find the itemSheet for each one and check 
-	 * for an entry that matches title. Then use that sheetname (aka boardName) to find
-	 * the source to destination translation and then get the destination board Id to 
+	 * Scan through the list of source boards, find the itemSheet for each one and
+	 * check
+	 * for an entry that matches title. Then use that sheetname (aka boardName) to
+	 * find
+	 * the source to destination translation and then get the destination board Id
+	 * to
 	 * see if the card already exists. If so, get that card, else return null.
+	 * 
 	 * @param cfg
 	 * @param parentId
 	 * @return
@@ -630,17 +664,18 @@ public class XlUtils {
 		Integer sCol = findColumnFromSheet(cSht, InternalConfig.SOURCE_BOARDNAME_COLUMN);
 		Integer dCol = findColumnFromSheet(cSht, InternalConfig.DESTINATION_BOARDNAME_COLUMN);
 		Iterator<Row> rIter = cSht.iterator();
-		rIter.next(); //Skip headers
-		while (rIter.hasNext()){
+		rIter.next(); // Skip headers
+		while (rIter.hasNext()) {
 			Row row = rIter.next();
-			//Get the sheet with the same name as the board
+			// Get the sheet with the same name as the board
 			XSSFSheet st = cfg.wb.getSheet(row.getCell(sCol).getStringCellValue());
 			if (st != null) {
 				Row targ = findRowByStringValue(st, ColNames.TITLE, parentId);
-				if ( targ != null){
+				if (targ != null) {
 					String brdName = row.getCell(dCol).getStringCellValue();
 					Card crd = LkUtils.getCardByTitle(cfg, cfg.destination, brdName, parentId);
-					if (crd != null) return crd;
+					if (crd != null)
+						return crd;
 				}
 			}
 		}

@@ -41,12 +41,15 @@ public class InternalConfig {
     public String archive = null;
     public XSSFSheet replaySheet;
 
-	public Integer group;
-	public boolean exporter;
-	public boolean importer;
-	public boolean obliterate;
-	public boolean removeBoard;
-	public boolean updateLayout;
-	public boolean deleteCards;
+	public Integer group = 0;
+	public boolean exporter = false;
+	public boolean importer = false;
+	public boolean obliterate = false;
+	public boolean remakeBoard = false;
+	public boolean updateLayout = false;
+	public boolean deleteCards = false;
+	public boolean eraseBoard = false;
+	public boolean ignoreCards;
+	public String[] ignTypes;
 }
 

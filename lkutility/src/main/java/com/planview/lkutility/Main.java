@@ -22,9 +22,10 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
+import com.planview.lkutility.Utils.BoardArchiver;
+import com.planview.lkutility.Utils.CardDeleter;
 import com.planview.lkutility.exporter.Exporter;
 import com.planview.lkutility.importer.Importer;
-import com.planview.lkutility.leankit.Board;
 
 public class Main {
 	static Debug d = null;
@@ -70,57 +71,45 @@ public class Main {
 			 * 10. import to dst
 			 * 11. Hook up parents
 			 */
-			Iterator<Row> rowItr = configSht.iterator();
-			Row row = rowItr.next(); // Move past headers
-			if (config.exporter) {
-				while (rowItr.hasNext()) {
-					row = rowItr.next();
-					config.group = 0;
 
-					// 1
-					config.source = new Access(
-							row.getCell(fieldMap.get(InternalConfig.SOURCE_URL_COLUMN)).getStringCellValue(),
-							row.getCell(fieldMap.get(InternalConfig.SOURCE_BOARDNAME_COLUMN)).getStringCellValue(),
-							row.getCell(fieldMap.get(InternalConfig.SOURCE_APIKEY_COLUMN)).getStringCellValue());
-					config.destination = new Access(
-							row.getCell(fieldMap.get(InternalConfig.DESTINATION_URL_COLUMN)).getStringCellValue(),
-							row.getCell(fieldMap.get(InternalConfig.DESTINATION_BOARDNAME_COLUMN)).getStringCellValue(),
-							row.getCell(fieldMap.get(InternalConfig.DESTINATION_APIKEY_COLUMN)).getStringCellValue());
-
+			Iterator<Row> rowItr = null;
+			Row row = null;
+			rowItr = configSht.iterator();
+			row = rowItr.next(); // Move past headers
+			while (rowItr.hasNext()) {
+				row = rowItr.next();
+				// 1
+				config = XlUtils.setConfig(config, row, fieldMap);
+				config.group = 0;
+				if (config.exporter || config.obliterate) {
 					// 2 & 3 (Exporter does check for board)
-
 					Exporter exp = new Exporter(config);
 					exp.go();
 				}
-			}
 
-			//Now we need to check/reset the destination board if needed
-			Board brd = LkUtils.getBoardByTitle(config, config.destination);
-			//Do we need to create it?
-			if (brd == null) {
+				// Now we need to check/reset the destination board if needed
 
-			} else {
-				//Now check layout, customBits, etc.
-			}
+				if ((config.deleteCards || config.obliterate) && !config.remakeBoard) {
+					CardDeleter cd = new CardDeleter(config);
+					cd.go();
+				}
 
+				if ((config.remakeBoard && !config.eraseBoard) || config.obliterate) {
+					BoardArchiver ba = new BoardArchiver(config);
+					ba.go();
+				}
 
-			rowItr = configSht.iterator();
-			row = rowItr.next(); // Move past headers
+				if (config.eraseBoard) {
+					BoardDeleter bd = new BoardDeleter(config);
+					bd.go();
+				}
 
-			if (config.importer) {
-				while (rowItr.hasNext()) {
-					row = rowItr.next();
-					config.group = 0;
+				if (config.eraseBoard || config.remakeBoard) {
+					BoardCreator bd = new BoardCreator(config);
+					bd.go();
+				}
 
-					config.source = new Access(
-							row.getCell(fieldMap.get(InternalConfig.SOURCE_URL_COLUMN)).getStringCellValue(),
-							row.getCell(fieldMap.get(InternalConfig.SOURCE_BOARDNAME_COLUMN)).getStringCellValue(),
-							row.getCell(fieldMap.get(InternalConfig.SOURCE_APIKEY_COLUMN)).getStringCellValue());
-					config.destination = new Access(
-							row.getCell(fieldMap.get(InternalConfig.DESTINATION_URL_COLUMN)).getStringCellValue(),
-							row.getCell(fieldMap.get(InternalConfig.DESTINATION_BOARDNAME_COLUMN)).getStringCellValue(),
-							row.getCell(fieldMap.get(InternalConfig.DESTINATION_APIKEY_COLUMN)).getStringCellValue());
-
+				if (config.importer || config.obliterate) {
 					Importer imp = new Importer(config);
 					imp.go();
 				}
@@ -161,19 +150,23 @@ public class Main {
 		dbp.setRequired(false);
 		cmdOpts.addOption(dbp);
 
-		Option removeOpt = new Option("r", "remove", false, "Remove target board by archiving");
+		Option remakeOpt = new Option("r", "remake", false, "Remake target boards by archiving old and adding new");
+		remakeOpt.setRequired(false);
+		cmdOpts.addOption(remakeOpt);
+
+		Option removeOpt = new Option("R", "remove", false, "Remove target boards");
 		removeOpt.setRequired(false);
 		cmdOpts.addOption(removeOpt);
 
-		Option eraseOpt = new Option("d", "delete", false, "Delete cards on target board");
+		Option eraseOpt = new Option("d", "delete", false, "Delete cards on target boards");
 		eraseOpt.setRequired(false);
 		cmdOpts.addOption(eraseOpt);
 
-		Option askOpt = new Option("F", "force", false, "Force through any changes needed");
+		Option askOpt = new Option("F", "fresh", false, "Fresh Start of all steps and changes needed");
 		askOpt.setRequired(false);
 		cmdOpts.addOption(askOpt);
 
-		Option layoutOpt = new Option("l", "layout", false, "Update layoput of target board");
+		Option layoutOpt = new Option("l", "layout", false, "Update layoput of target boards");
 		layoutOpt.setRequired(false);
 		cmdOpts.addOption(layoutOpt);
 
@@ -198,6 +191,10 @@ public class Main {
 		originOpt.setRequired(false);
 		cmdOpts.addOption(originOpt);
 
+		Option epicOpt = new Option("c", "epics", false, "Do not import certain types");
+		epicOpt.setRequired(false);
+		cmdOpts.addOption(epicOpt);
+
 		try {
 			cmdLn = p.parse(cmdOpts, args, true);
 
@@ -219,20 +216,18 @@ public class Main {
 		}
 
 		config.xlsxfn = cmdLn.getOptionValue("filename");
-		config.exporter = true;
-		config.importer = true;
 
-		if (cmdLn.hasOption("export")) { // Are we export only?
-			if (cmdLn.hasOption("import")) { // Don't want both
-				d.p(Debug.WARN, "Import only and export only are mutually exclusive - doing export only");
-				config.importer = false;
-			}
-		} else if (cmdLn.hasOption("import")) { // Doing import only so turn off exporter
-			config.exporter = false;
+		// Do the exports
+		if (cmdLn.hasOption("export")) { 
+			config.exporter = true;
 		}
 
-		// We now need to check for all the other unique options
+		//Do the imports
+		if (cmdLn.hasOption("import")) {
+			config.importer = true;
+		}
 
+		//What to export/import
 		if (cmdLn.hasOption("archived")) {
 			config.exportArchived = true;
 		}
@@ -249,24 +244,33 @@ public class Main {
 			config.addComment = true;
 		}
 
-		//Option to push through all work regardless
-		if (cmdLn.hasOption("force")) {
+		// Option to push through all work regardless
+		if (cmdLn.hasOption("fresh")) {
 			config.obliterate = true;
 		}
 
-		//Archive the destination board
+		// Archive the destination board
+		if (cmdLn.hasOption("remake")) {
+			config.remakeBoard = true;
+		}		
+		
+		// Delete the destination board
 		if (cmdLn.hasOption("remove")) {
-			config.removeBoard = true;
+			config.eraseBoard = true;
 		}
 
-		//Update the layout of the destination board to match the src
+		// Update the layout of the destination board to match the src
 		if (cmdLn.hasOption("layout")) {
 			config.updateLayout = true;
 		}
 
-		//Delete all the cards on the destination board
+		// Delete all the cards on the destination board
 		if (cmdLn.hasOption("delete")) {
 			config.deleteCards = true;
+		}
+		//Specific demoarea use-case
+		if (cmdLn.hasOption("epics")) {
+			config.ignoreCards = true;
 		}
 
 	}

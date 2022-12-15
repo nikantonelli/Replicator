@@ -493,16 +493,37 @@ public class LeanKitAccess {
 		return read(Board.class);
 	}
 
-	public void deleteCards(ArrayList<Card> cards) {
-		for (int i = 0; i < cards.size(); i++) {
-			d.p(Debug.INFO, "Deleting card %s\n", cards.get(i).id);
+	public Board updateBoardById(String id, JSONObject updates) {
+		reqHdrs.clear();
+		reqType = "PATCH";
+		reqUrl = "/io/board/" + id;
+		reqEnt = new StringEntity(updates.toString(), "UTF-8");
+		reqParams.clear();
+		return execute(Board.class);
+	}
 
-			reqType = "DELETE";
-			reqHdrs.clear();
-			reqParams.clear();
-			reqUrl = "/io/card/" + cards.get(i).id;
-			processRequest();
-		}
+	public void archiveBoard(String id) {
+		reqType = "POST";
+		reqUrl = "/io/board/" + id + "/archive";
+		reqParams.clear();
+		reqHdrs.clear();
+		processRequest();
+	}
+
+	public void deleteCard(String id) {
+		reqType = "DELETE";
+		reqHdrs.clear();
+		reqParams.clear();
+		reqUrl = "/io/card/" + id;
+		processRequest();
+	}
+
+	public void deleteBoard(String id) {
+		reqType = "DELETE";
+		reqHdrs.clear();
+		reqParams.clear();
+		reqUrl = "/io/board/" + id;
+		processRequest();
 	}
 
 	public ArrayList<Comment> fetchCommentsForCard(Card cd) {
@@ -553,7 +574,7 @@ public class LeanKitAccess {
 		}
 
 		ArrayList<Board> results = read(Board.class);
-		if ((results != null) && (results.size() > 0)){
+		if ((results != null) && (results.size() > 0)) {
 			return results.get(0);
 		}
 		return null;
@@ -567,7 +588,7 @@ public class LeanKitAccess {
 		reqParams.add(new BasicNameValuePair("returnFullRecord", "true"));
 
 		ArrayList<Board> results = read(Board.class);
-		if ((results != null) && (results.size() > 0)){
+		if ((results != null) && (results.size() > 0)) {
 			return results.get(0);
 		}
 		return null;
@@ -718,7 +739,7 @@ public class LeanKitAccess {
 	 * Must have a unique title string or returns null
 	 * 
 	 * @param boardId
-	 *  Restrict search to this board or null, if global
+	 *                Restrict search to this board or null, if global
 	 * @param title
 	 * @return single card or null
 	 */
@@ -729,8 +750,8 @@ public class LeanKitAccess {
 		reqHdrs.clear();
 		String encoded = null;
 		try {
-			//Quote the string so we don't get partial matches
-			encoded = URLEncoder.encode("\""+title+"\"", "UTF-8");
+			// Quote the string so we don't get partial matches
+			encoded = URLEncoder.encode("\"" + title + "\"", "UTF-8");
 
 		} catch (UnsupportedEncodingException e) {
 			// Encoder needs a try/catch, so we just print and continue
@@ -983,15 +1004,22 @@ public class LeanKitAccess {
 
 	public Card createCard(JSONObject jItem) {
 
-		/**
-		 * We have to 'translate' some fields as we do for updateCard
-		 */
 		reqType = "POST";
 		reqUrl = "/io/card/";
 		reqParams.clear();
 		reqParams.add(new BasicNameValuePair("returnFullRecord", "true"));
 		reqEnt = new StringEntity(jItem.toString(), "UTF-8");
 		return execute(Card.class);
+	}
+
+	public Board createBoard(JSONObject jItem) {
+
+		reqType = "POST";
+		reqUrl = "/io/board/";
+		reqParams.clear();
+		reqParams.add(new BasicNameValuePair("returnFullRecord", "true"));
+		reqEnt = new StringEntity(jItem.toString(), "UTF-8");
+		return execute(Board.class);
 	}
 
 	public Card addTaskToCard(String cardId, JSONObject item) {

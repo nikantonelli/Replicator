@@ -66,6 +66,40 @@ public class AccessCache {
 		boardMap.put(brd.title, brd);
 	}
 
+	public void unsetBoardByTitle(String title) {
+		boardMap.remove(title);
+	}	
+	
+	public void unsetBoardById(String id) {
+		Board brd = null;
+		Iterator<Map.Entry<String, Board>>  es = boardMap.entrySet().iterator();
+		while (es.hasNext()){
+			Entry<String, Board> ent = es.next();
+			if (ent.getValue().id.equals(id)){
+				brd = ent.getValue();
+			}
+		}
+
+		if (brd != null) boardMap.remove(brd.title);
+	}	
+
+	public void unsetCardByTitle(String title) {
+		cardMap.remove(title);
+	}
+
+	public void unsetCardById(String id) {
+		Card crd = null;
+		Iterator<Map.Entry<String, Card>>  es = cardMap.entrySet().iterator();
+		while (es.hasNext()){
+			Entry<String, Card> ent = es.next();
+			if (ent.getValue().id.equals(id)){
+				crd = ent.getValue();
+			}
+		}
+
+		if (crd != null) cardMap.remove(crd.title);
+	}
+
 	public Board getBoardByTitle(String title) {
 		Board brd = boardMap.get(title);
 		if (brd == null) {

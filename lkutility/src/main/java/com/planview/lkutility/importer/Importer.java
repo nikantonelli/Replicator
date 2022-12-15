@@ -48,7 +48,7 @@ public class Importer {
 		 * exporter directly
 		 */
 
-			cfg.changesSheet = cfg.wb.getSheet(InternalConfig.CHANGES_SHEET_NAME + cfg.source.BoardName);
+		cfg.changesSheet = cfg.wb.getSheet(InternalConfig.CHANGES_SHEET_NAME + cfg.source.BoardName);
 
 		if (null == cfg.changesSheet) {
 			d.p(Debug.ERROR, "Cannot find required Changes sheet in file: %s\n", cfg.xlsxfn);
@@ -80,7 +80,8 @@ public class Importer {
 			d.p(Debug.INFO, "No actions to take for group %d\n", cfg.group);
 			return;
 		} else {
-			d.p(Debug.INFO, "%d actions to take for group %d on board \"%s\"\n", todaysChanges.size(), cfg.group, cfg.source.BoardName);
+			d.p(Debug.INFO, "%d actions to take for group %d on board \"%s\"\n", todaysChanges.size(), cfg.group,
+					cfg.source.BoardName);
 		}
 		// Now scan through the changes doing the actions
 		Iterator<Row> cItor = todaysChanges.iterator();
@@ -139,39 +140,61 @@ public class Importer {
 			}
 
 			// If unset, it has a null value for the Leankit ID
-			// if ((item.getCell(idCol) == null) || (item.getCell(idCol).getStringCellValue() == "")) {
-			// 	// Check if this is a 'create' operation. If not, ignore and continue past.
-			// 	if (!change.getCell(cc.action).getStringCellValue().equals("Create")
-			// 			&& !(change.getCell(cc.action).getStringCellValue().equals("Modify")
-			// 					&& field.equals("Task"))
-			// 			) {
-			// 		d.p(Debug.WARN, "Ignoring action \"%s\" on item \"%s\" (no ID present in item row: %d)\n",
-			// 				change.getCell(cc.action).getStringCellValue(), item.getCell(titleCol).getStringCellValue(),
-			// 				item.getRowNum());
-			// 		continue; // Break out and try next change
-			// 	}
+			// if ((item.getCell(idCol) == null) ||
+			// (item.getCell(idCol).getStringCellValue() == "")) {
+			// // Check if this is a 'create' operation. If not, ignore and continue past.
+			// if (!change.getCell(cc.action).getStringCellValue().equals("Create")
+			// && !(change.getCell(cc.action).getStringCellValue().equals("Modify")
+			// && field.equals("Task"))
+			// ) {
+			// d.p(Debug.WARN, "Ignoring action \"%s\" on item \"%s\" (no ID present in item
+			// row: %d)\n",
+			// change.getCell(cc.action).getStringCellValue(),
+			// item.getCell(titleCol).getStringCellValue(),
+			// item.getRowNum());
+			// continue; // Break out and try next change
+			// }
 			// } else {
-			// 	// Check if this is a 'create' operation. If it is, ignore and continue past.
-			// 	if (change.getCell(cc.action).getStringCellValue().equals("Create")) {
-			// 		d.p(Debug.WARN,
-			// 				"Ignoring action \"%s\" on item \"%s\" (attempting create on existing ID in item row: %d)\n",
-			// 				change.getCell(cc.action).getStringCellValue(), item.getCell(titleCol).getStringCellValue(),
-			// 				item.getRowNum());
-			// 		continue; // Break out and try next change
-			// 	}
+			// // Check if this is a 'create' operation. If it is, ignore and continue past.
+			// if (change.getCell(cc.action).getStringCellValue().equals("Create")) {
+			// d.p(Debug.WARN,
+			// "Ignoring action \"%s\" on item \"%s\" (attempting create on existing ID in
+			// item row: %d)\n",
+			// change.getCell(cc.action).getStringCellValue(),
+			// item.getCell(titleCol).getStringCellValue(),
+			// item.getRowNum());
+			// continue; // Break out and try next change
+			// }
 
 			// }
 			String id = null;
 			if (change.getCell(cc.action).getStringCellValue().equals("Create")) {
-				id = doAction(change, item);
-				if (item.getCell(idCol) == null) {
 
-					item.createCell(idCol);
+				boolean runAction = true;
+				// Demo reset use
+				if (cfg.ignTypes != null) {
+					for (int i = 0; i < cfg.ignTypes.length; i++) {
+						if (item.getCell(typeCol) != null) {
+							if (item.getCell(typeCol).getStringCellValue().equals(cfg.ignTypes[i])) {
+								runAction = false;
+							}
+						}
+					}
 				}
-				item.getCell(idCol).setCellValue(id);
-				XSSFFormulaEvaluator.evaluateAllFormulaCells(cfg.wb);
 
-				d.p(Debug.INFO, "Create card \"%s\" (changes row %s)\n", id, change.getRowNum());
+				if (runAction) {
+					id = doAction(change, item);
+					if (item.getCell(idCol) == null) {
+
+						item.createCell(idCol);
+					}
+					item.getCell(idCol).setCellValue(id);
+					XSSFFormulaEvaluator.evaluateAllFormulaCells(cfg.wb);
+
+					d.p(Debug.INFO, "Create card \"%s\" (changes row %s)\n", id, change.getRowNum());
+				} else {
+					d.p(Debug.INFO, "Skipping create card \"%s\" (changes row %s)\n", item.getCell(titleCol).getStringCellValue(), change.getRowNum());
+				}
 			} else {
 				id = doAction(change, item);
 				d.p(Debug.INFO, "Mod: \"%s\" on card \"%s\" (changes row %s)\n",
@@ -215,13 +238,12 @@ public class Importer {
 			if (nm.equals(ColNames.ID)) {
 				idCol = cl.getColumnIndex();
 				continue;
-			} else if (nm.equals(ColNames.SOURCE_ID)) {	
+			} else if (nm.equals(ColNames.SOURCE_ID)) {
 				continue;
 			}
 			fieldLst.put(nm, cl.getColumnIndex());
 		}
 
-	
 		if (change.getCell(cc.action).getStringCellValue().equalsIgnoreCase("Create")) {
 			// Now 'translate' the spreadsheet name:col pairs to fieldName:value pairs
 
@@ -231,10 +253,12 @@ public class Importer {
 			// creation
 			if (!fieldLst.has("boardId")) {
 				Board brd = LkUtils.getBoardByTitle(cfg, cfg.destination);
-				if (brd != null) flds.put("boardId", brd.id);
+				if (brd != null)
+					flds.put("boardId", brd.id);
 				else {
-					d.p(Debug.ERROR, "Could not create card on board \"%s\" with details: \"%s\"\n", cfg.destination.BoardName,
-						flds.toString());
+					d.p(Debug.ERROR, "Could not create card on board \"%s\" with details: \"%s\"\n",
+							cfg.destination.BoardName,
+							flds.toString());
 					System.exit(18);
 				}
 			} else {
@@ -280,12 +304,14 @@ public class Importer {
 							XSSFSheet cSheet = cfg.wb.getSheet(tca.getSheetName());
 							Row task = cSheet.getRow(tca.getRow());
 
-							JSONObject jsonTask = XlUtils.jsonCardFromRow(cfg, cfg.destination, fieldLst, task, card.id);
+							JSONObject jsonTask = XlUtils.jsonCardFromRow(cfg, cfg.destination, fieldLst, task,
+									card.id);
 							if (task.getCell(idCol) == null) {
 
 								task.createCell(idCol);
 							}
-							task.getCell(idCol).setCellValue(LkUtils.addTask(cfg, cfg.destination, card.id, jsonTask).id);
+							task.getCell(idCol)
+									.setCellValue(LkUtils.addTask(cfg, cfg.destination, card.id, jsonTask).id);
 							break;
 						}
 						case "assignedUsers": {
@@ -329,7 +355,8 @@ public class Importer {
 						}
 						case "lane": {
 							String[] bits = ((String) XlUtils.getCell(change, cc.value)).split(",");
-							Lane foundLane = LkUtils.getLaneFromBoardTitle(cfg, cfg.destination, cfg.destination.BoardName,
+							Lane foundLane = LkUtils.getLaneFromBoardTitle(cfg, cfg.destination,
+									cfg.destination.BoardName,
 									bits[0]);
 							if (foundLane != null) {
 								vals.put("value", foundLane.id);
@@ -342,18 +369,18 @@ public class Importer {
 						}
 
 						case "Parent": {
-								// Get the parentID originally associated with this card
-								String parentId = change.getCell(cc.value).getStringCellValue();
-								// Find the row with that ID in it
-								Card crd = XlUtils.findCardByTitle(cfg, parentId);
-								if ((crd != null) && (crd.id != null)) {
-									vals.put("value", crd.id);
-									fld.put(field, vals);
-								}
-								break;
-					
+							// Get the parentID originally associated with this card
+							String parentId = change.getCell(cc.value).getStringCellValue();
+							// Find the row with that ID in it
+							Card crd = XlUtils.findCardByTitle(cfg, parentId);
+							if ((crd != null) && (crd.id != null)) {
+								vals.put("value", crd.id);
+								fld.put(field, vals);
+							}
+							break;
+
 						}
-						
+
 						default: {
 							// Check if this is a standard/custom field and redo the 'put'
 

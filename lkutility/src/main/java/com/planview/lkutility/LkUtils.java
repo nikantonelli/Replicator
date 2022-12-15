@@ -212,6 +212,60 @@ public class LkUtils {
 		return card;
 	}
 
+	public static Board updateBoard(InternalConfig iCfg, Access accessCfg, String boardId, JSONObject updates) {
+		LeanKitAccess lka = new LeanKitAccess(accessCfg, iCfg.debugLevel);
+		Board brd = null;
+	
+		if (iCfg.cache != null) {
+			brd = iCfg.cache.getBoardById(boardId);
+		} else {
+			brd = lka.fetchBoardFromTitle(accessCfg.BoardName);
+		}
+		lka.updateBoardById(brd.id, updates);	//returns 204 No Content
+		brd = lka.fetchBoardFromTitle(brd.id);	// so refetch
+		if (brd != null) {
+			if (iCfg.cache != null) {
+				iCfg.cache.setBoard(brd);
+			}
+		}
+		return brd;
+	}
+
+	public static void archiveBoardById(InternalConfig iCfg, Access accessCfg, String boardId){
+		LeanKitAccess lka = new LeanKitAccess(accessCfg, iCfg.debugLevel);
+		if (iCfg.cache != null) {
+			iCfg.cache.unsetBoardById(boardId);
+		}
+		lka.archiveBoard(boardId);
+	}
+
+	public static void deleteBoard(InternalConfig iCfg, Access accessCfg){
+		Board brd = getBoardByTitle(iCfg, accessCfg);
+		if (brd != null) deleteBoardById(iCfg, accessCfg, brd.id);
+	}
+
+	public static void deleteBoardById(InternalConfig iCfg, Access accessCfg, String boardId){
+		LeanKitAccess lka = new LeanKitAccess(accessCfg, iCfg.debugLevel);
+		if (iCfg.cache != null) {
+			iCfg.cache.unsetBoardById(boardId);
+		}
+		lka.deleteBoard(boardId);
+	}
+
+
+	public static void deleteCard(InternalConfig iCfg, Access accessCfg, String title){
+		Card crd = getCardByTitle(iCfg, accessCfg, title);
+		if (crd != null) deleteCardById(iCfg, accessCfg, crd.id);
+	}
+
+	public static void deleteCardById(InternalConfig iCfg, Access accessCfg, String cardId){
+		LeanKitAccess lka = new LeanKitAccess(accessCfg, iCfg.debugLevel);
+		if (iCfg.cache != null) {
+			iCfg.cache.unsetCardById(cardId);
+		}
+		lka.deleteCard(cardId);
+	}
+
 	static ArrayList<Lane> getLanesFromName(ArrayList<Lane> lanes, String name) {
 		ArrayList<Lane> ln = new ArrayList<>();
 		for (int i = 0; i < lanes.size(); i++) {
@@ -477,5 +531,33 @@ public class LkUtils {
 		}
 		return card;
 	}
+
+	public static void duplicateBoard(InternalConfig cfg) {
+		LeanKitAccess lka = new LeanKitAccess(cfg.source, cfg.debugLevel);
+		Board brd = lka.fetchBoardFromTitle(cfg.source.BoardName);
+		JSONObject details = new JSONObject();
+		details.put("title", cfg.destination.BoardName);
+		details.put("fromBoardId", brd.id);
+		details.put("includeExistingUsers", true);
+		details.put("includeCards", false);
+		details.put("isShared", true);
+		details.put("sharedBoardRole","boardUser");
+		details.put("excludeCompletedAndArchiveViolations", true);
+		lka.createBoard(details);
+	}
 	
+	public static Board createBoard(InternalConfig cfg, Access accessCfg){
+		LeanKitAccess lka = new LeanKitAccess(cfg.destination, cfg.debugLevel);
+		Board brd = null;
+		JSONObject details = new JSONObject();
+		details.put("title", cfg.destination.BoardName);
+		details.put("isShared", true);
+		details.put("sharedBoardRole","boardUser");
+		details.put("excludeCompletedAndArchiveViolations", true);
+		brd = lka.createBoard(details);
+		return brd;
+	}
+
+	public static void createCustomIcon(InternalConfig cfg, Access destination, CustomIcon customIcon) {
+	}
 }
