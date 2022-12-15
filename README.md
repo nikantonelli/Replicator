@@ -37,6 +37,6 @@ If you are manually creating the importer spreadsheet, you will need to bear thi
 
 ## Assigned Users on Import
 
-If your destination system does not have the correct users set up (with access to the board), the users are ignored. The tool tries to match the "username" which is usually of emailAddress format.
+If your destination system does not have the correct users set up, the users are ignored. The tool tries to match the "username" which is usually of emailAddress format.
 
 The importer will take the spreadsheet field as a comma separated list of users.
