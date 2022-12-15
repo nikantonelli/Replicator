@@ -104,7 +104,7 @@ public class Main {
 					bd.go();
 				}
 
-				if (config.eraseBoard || config.remakeBoard) {
+				if (config.remakeBoard) {
 					BoardCreator bd = new BoardCreator(config);
 					bd.go();
 				}
