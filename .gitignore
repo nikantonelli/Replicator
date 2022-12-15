@@ -1,7 +1,7 @@
 .vscode
-!lkutility/target
-lkutility/target/*
-!lkutility/target/*.jar
+!replicator/target
+replicator/target/*
+!replicator/target/*.jar
 .settings
 .classpath
 .project
