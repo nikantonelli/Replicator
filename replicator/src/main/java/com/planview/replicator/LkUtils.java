@@ -532,7 +532,7 @@ public class LkUtils {
 		return card;
 	}
 
-	public static void duplicateBoard(InternalConfig cfg) {
+	public static Board duplicateBoard(InternalConfig cfg) {
 		LeanKitAccess lka = new LeanKitAccess(cfg.source, cfg.debugLevel);
 		Board brd = lka.fetchBoardFromTitle(cfg.source.BoardName);
 		JSONObject details = new JSONObject();
@@ -543,7 +543,7 @@ public class LkUtils {
 		details.put("isShared", true);
 		details.put("sharedBoardRole","boardUser");
 		details.put("excludeCompletedAndArchiveViolations", true);
-		lka.createBoard(details);
+		return lka.createBoard(details);
 	}
 	
 	public static Board createBoard(InternalConfig cfg, Access accessCfg){

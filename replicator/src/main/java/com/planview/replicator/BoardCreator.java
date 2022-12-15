@@ -26,7 +26,10 @@ public class BoardCreator {
 		if (dst.endsWith("/")) src = dst.substring(0, dst.length()-1);
 
 		if (src.equals(dst)){
-			LkUtils.duplicateBoard( cfg);
+			Board brd = LkUtils.duplicateBoard( cfg);
+			JSONObject details = new JSONObject();
+			details.put("allowPlanviewIntegration", true);
+			LkUtils.updateBoard(cfg, cfg.destination, brd.id, details);
 		} else {
 
 			//Here, we have to copy across all the set up of the original board
