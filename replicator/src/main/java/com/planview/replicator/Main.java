@@ -104,10 +104,10 @@ public class Main {
 					bd.go();
 				}
 
-				// if (config.eraseBoard || config.remakeBoard) {
-				// 	BoardCreator bd = new BoardCreator(config);
-				// 	bd.go();
-				// }
+				if (config.eraseBoard || config.remakeBoard) {
+					BoardCreator bd = new BoardCreator(config);
+					bd.go();
+				}
 
 				if (config.importer || config.obliterate) {
 					Importer imp = new Importer(config);
