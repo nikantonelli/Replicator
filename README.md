@@ -3,7 +3,7 @@
 Not for public consumption. It is for a specific need within Planview to replicate demo environments
 
 ## Features
-* Works from the TITLES of cards and not the IDs. This means if you have two cards, or boards, of the same name, it might not pick up the one you want.
+* Works from the TITLES of cards and not the IDs. This means if you have two cards, or two boards, of the same name, it might not pick up the one you want.
 * Will ignore card types (in a list in the config sheet) per replicate. This is useful for when there might be cards that come in from an external source, e.g. Portfolios that will need to be parented to child childs on other boards
 * Cards that come in from Portfolios can be moved to an apprropiate lane by adding "Modify" rows into the Changes sheets on a name/title basis.
 
