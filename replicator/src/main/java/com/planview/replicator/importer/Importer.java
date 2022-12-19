@@ -48,7 +48,8 @@ public class Importer {
 		 * exporter directly
 		 */
 
-		cfg.changesSheet = cfg.wb.getSheet(XlUtils.validateSheetName( InternalConfig.CHANGES_SHEET_NAME + cfg.source.BoardName));
+		cfg.changesSheet = cfg.wb
+				.getSheet(XlUtils.validateSheetName(InternalConfig.CHANGES_SHEET_NAME + cfg.source.BoardName));
 
 		if (null == cfg.changesSheet) {
 			d.p(Debug.ERROR, "Cannot find required Changes sheet in file: %s\n", cfg.xlsxfn);
@@ -138,75 +139,48 @@ public class Importer {
 					continue; // Break out and try next change
 				}
 			}
-
-			// If unset, it has a null value for the Leankit ID
-			// if ((item.getCell(idCol) == null) ||
-			// (item.getCell(idCol).getStringCellValue() == "")) {
-			// // Check if this is a 'create' operation. If not, ignore and continue past.
-			// if (!change.getCell(cc.action).getStringCellValue().equals("Create")
-			// && !(change.getCell(cc.action).getStringCellValue().equals("Modify")
-			// && field.equals("Task"))
-			// ) {
-			// d.p(Debug.WARN, "Ignoring action \"%s\" on item \"%s\" (no ID present in item
-			// row: %d)\n",
-			// change.getCell(cc.action).getStringCellValue(),
-			// item.getCell(titleCol).getStringCellValue(),
-			// item.getRowNum());
-			// continue; // Break out and try next change
-			// }
-			// } else {
-			// // Check if this is a 'create' operation. If it is, ignore and continue past.
-			// if (change.getCell(cc.action).getStringCellValue().equals("Create")) {
-			// d.p(Debug.WARN,
-			// "Ignoring action \"%s\" on item \"%s\" (attempting create on existing ID in
-			// item row: %d)\n",
-			// change.getCell(cc.action).getStringCellValue(),
-			// item.getCell(titleCol).getStringCellValue(),
-			// item.getRowNum());
-			// continue; // Break out and try next change
-			// }
-
-			// }
 			String id = null;
-			if (change.getCell(cc.action).getStringCellValue().equals("Create")) {
-
-				boolean runAction = true;
-				// Demo reset use
-				if (cfg.ignTypes != null) {
-					for (int i = 0; i < cfg.ignTypes.length; i++) {
-						if (item.getCell(typeCol) != null) {
-							if (item.getCell(typeCol).getStringCellValue().equals(cfg.ignTypes[i])) {
-								runAction = false;
-							}
+			boolean runAction = true;
+			// Demo reset use
+			if (cfg.ignTypes != null) {
+				for (int i = 0; i < cfg.ignTypes.length; i++) {
+					if (item.getCell(typeCol) != null) {
+						if (item.getCell(typeCol).getStringCellValue().equals(cfg.ignTypes[i])) {
+							runAction = false;
 						}
 					}
 				}
-
-				if (runAction) {
+			}
+			String action = change.getCell(cc.action).getStringCellValue();
+			if (runAction) {
+				if (action.equals("Create")) {
 					id = doAction(change, item);
-					if (item.getCell(idCol) == null) {
+					if (id != null) {
+						if (item.getCell(idCol) == null) {
 
-						item.createCell(idCol);
+							item.createCell(idCol);
+						}
+						item.getCell(idCol).setCellValue(id);
+						XSSFFormulaEvaluator.evaluateAllFormulaCells(cfg.wb);
+
+						d.p(Debug.INFO, "Create card \"%s\" (changes row %s)\n", id, change.getRowNum());
 					}
-					item.getCell(idCol).setCellValue(id);
-					XSSFFormulaEvaluator.evaluateAllFormulaCells(cfg.wb);
-
-					d.p(Debug.INFO, "Create card \"%s\" (changes row %s)\n", id, change.getRowNum());
 				} else {
-					d.p(Debug.INFO, "Skipping create card \"%s\" (changes row %s)\n", item.getCell(titleCol).getStringCellValue(), change.getRowNum());
+					id = doAction(change, item);
+					if (id != null) {
+						d.p(Debug.INFO, "Mod: \"%s\" on card \"%s\" (changes row %s)\n",
+								field, id, change.getRowNum());
+					}
+				}
+				if (id != null) {
+					XlUtils.writeFile(cfg, cfg.xlsxfn, cfg.wb);
+				} else {
+					d.p(Debug.ERROR, "%s",
+							"Got null back from doAction(). Most likely card deleted!\n");
 				}
 			} else {
-				id = doAction(change, item);
-				d.p(Debug.INFO, "Mod: \"%s\" on card \"%s\" (changes row %s)\n",
-						field, id, change.getRowNum());
-			}
-
-			if (id == null) {
-
-				d.p(Debug.ERROR, "%s",
-						"Got null back from doAction(). Most likely card deleted!\n");
-			} else {
-				XlUtils.writeFile(cfg, cfg.xlsxfn, cfg.wb);
+				d.p(Debug.INFO, "Skipping action \"%s\" for card \"%s\" (changes row %s)\n",
+						action, item.getCell(titleCol).getStringCellValue(), change.getRowNum());
 			}
 		}
 	}
