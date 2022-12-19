@@ -37,7 +37,7 @@ public class BoardCreator {
 			//Here, we have to copy across all the set up of the original board
 
 			//First create a new board
-			Board dstBrd = LkUtils.createBoard(cfg, cfg.destination);
+			//Board dstBrd = LkUtils.createBoard(cfg, cfg.destination);
 			Board srcBrd = LkUtils.getBoardByTitle(cfg, cfg.source);
 			JSONObject updates = new JSONObject();
 			updates.put("enableCustomIcon", true);

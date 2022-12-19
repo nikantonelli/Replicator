@@ -225,7 +225,8 @@ public class AccessCache {
 		ArrayList<BoardUser> users = boardUserMap.get(accessCfg.BoardName);
 		if (users == null) {
 			LeanKitAccess lka = new LeanKitAccess(accessCfg, iCfg.debugLevel);
-			Board brd = lka.fetchBoardFromTitle(accessCfg.BoardName);
+			Board brd = boardMap.get(accessCfg.BoardName);
+			if (brd == null) lka.fetchBoardFromTitle(accessCfg.BoardName);
 			users = lka.fetchUsers(brd.id);
 			if (users != null) {
 				setBoardUsers(accessCfg.BoardName, users);
@@ -245,8 +246,10 @@ public class AccessCache {
 		CustomIcon[] cfm = customIconMap.get(accessCfg.BoardName);
 		if (cfm == null) {
 			LeanKitAccess lka = new LeanKitAccess(accessCfg, iCfg.debugLevel);
-			Board brd = lka.fetchBoardFromTitle(accessCfg.BoardName);
-			cfm = lka.fetchCustomIcons(brd.id).customIcons;
+
+			Board brd = boardMap.get(accessCfg.BoardName);
+			if ( brd == null) lka.fetchBoardFromTitle(accessCfg.BoardName);
+			if (brd != null) cfm = lka.fetchCustomIcons(brd.id).customIcons;
 			if (cfm != null) {
 				setCustomIcons(cfm, accessCfg.BoardName);
 			}

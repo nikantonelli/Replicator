@@ -23,7 +23,7 @@ public class LkUtils {
 	 * Next up is all the Leankit access routines
 	 * 
 	 */
-	
+
 	public static String getLanePathFromId(InternalConfig iCfg, Access accessCfg, String laneId) {
 		Board brd = null;
 		Lane[] lanes = null;
@@ -35,12 +35,12 @@ public class LkUtils {
 		} else {
 			LeanKitAccess lka = new LeanKitAccess(accessCfg, iCfg.debugLevel);
 			brd = lka.fetchBoardFromTitle(accessCfg.BoardName);
-			if ( brd != null) {
+			if (brd != null) {
 				brd = lka.fetchBoardFromId(brd.id);
 				lanes = brd.lanes;
 			}
 		}
-	
+
 		Lane lane = LkUtils.getLaneFromId(lanes, laneId);
 		String lanePath = "";
 		if (lane == null) {
@@ -48,7 +48,7 @@ public class LkUtils {
 		} else {
 			lanePath = lane.name;
 		}
-	
+
 		while (lane.parentLaneId != null) {
 			Lane parentLane = LkUtils.getLaneFromId(lanes, lane.parentLaneId);
 			if (parentLane != null) {
@@ -78,8 +78,7 @@ public class LkUtils {
 		Card card = null;
 		if (iCfg.cache != null) {
 			card = iCfg.cache.getCard(id);
-		}
-		else {
+		} else {
 			LeanKitAccess lka = new LeanKitAccess(accessCfg, iCfg.debugLevel);
 			card = lka.fetchCard(id);
 		}
@@ -98,7 +97,8 @@ public class LkUtils {
 		} else {
 			LeanKitAccess lka = new LeanKitAccess(accessCfg, iCfg.debugLevel);
 			brd = lka.fetchBoardFromTitle(accessCfg.BoardName);
-			if ( brd != null) brd = lka.fetchBoardFromId(brd.id);
+			if (brd != null)
+				brd = lka.fetchBoardFromId(brd.id);
 		}
 		return brd;
 	}
@@ -139,13 +139,16 @@ public class LkUtils {
 		ArrayList<CardType> types = null;
 		if (iCfg.cache != null) {
 			Board brd = iCfg.cache.getBoardByTitle(boardName);
-			types = new ArrayList<>();
-			for (int i = 0; i < brd.cardTypes.length; i++) {
-				types.add(brd.cardTypes[i]);
+			if (brd != null) {
+				types = new ArrayList<>();
+				for (int i = 0; i < brd.cardTypes.length; i++) {
+					types.add(brd.cardTypes[i]);
+				}
 			}
 		} else {
 			Board brd = lka.fetchBoardFromTitle(boardName);
-			types = lka.fetchCardTypes(brd.id);
+			if (brd != null)
+				types = lka.fetchCardTypes(brd.id);
 		}
 		return types;
 	}
@@ -153,13 +156,13 @@ public class LkUtils {
 	public static Card getCardByTitle(InternalConfig iCfg, Access accessCfg, String title) {
 		LeanKitAccess lka = new LeanKitAccess(accessCfg, iCfg.debugLevel);
 		Board brd = lka.fetchBoardFromTitle(accessCfg.BoardName);
-		return (brd != null)?lka.fetchCardByTitle(brd.id, title):null;
+		return (brd != null) ? lka.fetchCardByTitle(brd.id, title) : null;
 	}
 
 	public static Card getCardByTitle(InternalConfig iCfg, Access accessCfg, String boardName, String title) {
 		LeanKitAccess lka = new LeanKitAccess(accessCfg, iCfg.debugLevel);
 		Board brd = lka.fetchBoardFromTitle(boardName);
-		return (brd != null)?lka.fetchCardByTitle(brd.id, title):null;
+		return (brd != null) ? lka.fetchCardByTitle(brd.id, title) : null;
 	}
 
 	public static CardType getCardTypeFromBoard(InternalConfig iCfg, Access accessCfg, String name,
@@ -168,11 +171,13 @@ public class LkUtils {
 	}
 
 	public static CardType getCardTypeFromList(ArrayList<CardType> cardTypes, String name) {
-		Iterator<CardType> cti = cardTypes.iterator();
-		while (cti.hasNext()) {
-			CardType ct = cti.next();
-			if (ct.name.equals(name)) {
-				return ct;
+		if (cardTypes != null) {
+			Iterator<CardType> cti = cardTypes.iterator();
+			while (cti.hasNext()) {
+				CardType ct = cti.next();
+				if (ct.name.equals(name)) {
+					return ct;
+				}
 			}
 		}
 		return null;
@@ -181,7 +186,7 @@ public class LkUtils {
 	public static Card createCard(InternalConfig iCfg, Access accessCfg, JSONObject fieldLst) {
 		LeanKitAccess lka = new LeanKitAccess(accessCfg, iCfg.debugLevel);
 		// First create an empty card and get back the full structure
-	
+
 		Card newCard = lka.createCard(fieldLst);
 		if (newCard != null) {
 			if (iCfg.cache != null) {
@@ -195,7 +200,7 @@ public class LkUtils {
 		LeanKitAccess lka = new LeanKitAccess(accessCfg, iCfg.debugLevel);
 		Card card = null;
 		Board brd = null;
-	
+
 		if (iCfg.cache != null) {
 			card = iCfg.cache.getCard(cardId);
 			brd = iCfg.cache.getBoardByTitle(accessCfg.BoardName);
@@ -215,14 +220,14 @@ public class LkUtils {
 	public static Board updateBoard(InternalConfig iCfg, Access accessCfg, String boardId, JSONObject updates) {
 		LeanKitAccess lka = new LeanKitAccess(accessCfg, iCfg.debugLevel);
 		Board brd = null;
-	
+
 		if (iCfg.cache != null) {
 			brd = iCfg.cache.getBoardById(boardId);
 		} else {
 			brd = lka.fetchBoardFromTitle(accessCfg.BoardName);
 		}
-		lka.updateBoardById(brd.id, updates);	//returns 204 No Content
-		brd = lka.fetchBoardFromTitle(brd.id);	// so refetch
+		lka.updateBoardById(brd.id, updates); // returns 204 No Content
+		brd = lka.fetchBoardFromTitle(brd.id); // so refetch
 		if (brd != null) {
 			if (iCfg.cache != null) {
 				iCfg.cache.setBoard(brd);
@@ -231,7 +236,7 @@ public class LkUtils {
 		return brd;
 	}
 
-	public static void archiveBoardById(InternalConfig iCfg, Access accessCfg, String boardId){
+	public static void archiveBoardById(InternalConfig iCfg, Access accessCfg, String boardId) {
 		LeanKitAccess lka = new LeanKitAccess(accessCfg, iCfg.debugLevel);
 		if (iCfg.cache != null) {
 			iCfg.cache.unsetBoardById(boardId);
@@ -239,12 +244,13 @@ public class LkUtils {
 		lka.archiveBoard(boardId);
 	}
 
-	public static void deleteBoard(InternalConfig iCfg, Access accessCfg){
+	public static void deleteBoard(InternalConfig iCfg, Access accessCfg) {
 		Board brd = getBoardByTitle(iCfg, accessCfg);
-		if (brd != null) deleteBoardById(iCfg, accessCfg, brd.id);
+		if (brd != null)
+			deleteBoardById(iCfg, accessCfg, brd.id);
 	}
 
-	public static void deleteBoardById(InternalConfig iCfg, Access accessCfg, String boardId){
+	public static void deleteBoardById(InternalConfig iCfg, Access accessCfg, String boardId) {
 		LeanKitAccess lka = new LeanKitAccess(accessCfg, iCfg.debugLevel);
 		if (iCfg.cache != null) {
 			iCfg.cache.unsetBoardById(boardId);
@@ -252,13 +258,13 @@ public class LkUtils {
 		lka.deleteBoard(boardId);
 	}
 
-
-	public static void deleteCard(InternalConfig iCfg, Access accessCfg, String title){
+	public static void deleteCard(InternalConfig iCfg, Access accessCfg, String title) {
 		Card crd = getCardByTitle(iCfg, accessCfg, title);
-		if (crd != null) deleteCardById(iCfg, accessCfg, crd.id);
+		if (crd != null)
+			deleteCardById(iCfg, accessCfg, crd.id);
 	}
 
-	public static void deleteCardById(InternalConfig iCfg, Access accessCfg, String cardId){
+	public static void deleteCardById(InternalConfig iCfg, Access accessCfg, String cardId) {
 		LeanKitAccess lka = new LeanKitAccess(accessCfg, iCfg.debugLevel);
 		if (iCfg.cache != null) {
 			iCfg.cache.unsetCardById(cardId);
@@ -284,11 +290,11 @@ public class LkUtils {
 			brd = iCfg.cache.getBoardByTitle(boardName);
 		} else {
 			brd = lka.fetchBoardFromTitle(boardName);
-			if (brd != null){
+			if (brd != null) {
 				brd = lka.fetchBoardFromId(brd.id);
 			}
 		}
-		if (brd != null){
+		if (brd != null) {
 			return LkUtils.getLaneFromString(brd, name);
 		}
 		return null;
@@ -302,18 +308,18 @@ public class LkUtils {
 			LeanKitAccess lka = new LeanKitAccess(accessCfg, iCfg.debugLevel);
 			brd = lka.fetchBoardFromId(id);
 		}
-		if (brd != null){
+		if (brd != null) {
 			return LkUtils.getLaneFromString(brd, name);
 		}
 		return null;
 	}
 
-	static Lane getLaneFromId(ArrayList<Lane> allLanes, String id){
+	static Lane getLaneFromId(ArrayList<Lane> allLanes, String id) {
 		Lane lane = null;
 		Iterator<Lane> iter = allLanes.iterator();
-		while (iter.hasNext()){
+		while (iter.hasNext()) {
 			Lane ln = iter.next();
-			if (ln.id.equals(id)){
+			if (ln.id.equals(id)) {
 				lane = ln;
 				break;
 			}
@@ -321,9 +327,9 @@ public class LkUtils {
 		return lane;
 	}
 
-	static Lane getParentLane(ArrayList<Lane> searchLanes , Lane lane){
+	static Lane getParentLane(ArrayList<Lane> searchLanes, Lane lane) {
 		Lane parentLane = null;
-		if ( lane.parentLaneId != null) {
+		if (lane.parentLaneId != null) {
 			parentLane = getLaneFromId(searchLanes, lane.parentLaneId);
 		}
 		return parentLane;
@@ -332,10 +338,10 @@ public class LkUtils {
 	static Lane getLaneFromString(Board brd, String name) {
 		// Split lane in spreadhseet into bits
 		String[] lanes = name.split("\\^");
-	
+
 		// Get the list of lanes in the target board
 		ArrayList<Lane> searchLanes = new ArrayList<>(Arrays.asList(brd.lanes));
-	
+
 		// Work out the default drop lane in case we can't locate the right lane
 		Lane foundLane = null;
 		Lane defaultLane = null;
@@ -347,50 +353,48 @@ public class LkUtils {
 				break;
 			}
 		}
-	
+
 		// For each possible lane, check up its hierarchy to see if it matches the bits
 		// we have
 		int j = lanes.length - 1;
 		// Find those lanes that match the 'bit'
 		ArrayList<Lane> lanesToCheck = getLanesFromName(searchLanes, lanes[j]);
-	
+
 		Iterator<Lane> ltcIt = lanesToCheck.iterator();
-	
-		while (ltcIt.hasNext()){
+
+		while (ltcIt.hasNext()) {
 			Boolean found = true;
 			Lane thisLane = ltcIt.next();
 			Lane parentLane = getParentLane(searchLanes, thisLane);
 			int k = j;
-			while (parentLane != null){
-				if ((k > 0) && parentLane.name.equals(lanes[--k])){
+			while (parentLane != null) {
+				if ((k > 0) && parentLane.name.equals(lanes[--k])) {
 					parentLane = getParentLane(searchLanes, parentLane);
-				}
-				else {
+				} else {
 					found = false;
 					break;
 				}
-				if ((k > 0) && (parentLane == null)){
+				if ((k > 0) && (parentLane == null)) {
 					found = false;
 				}
 			}
-			if ( (k == 0) && found ) {
+			if ((k == 0) && found) {
 				foundLane = thisLane;
 				break;
 			}
 		}
-	
-	
+
 		if (foundLane == null) {
 			return defaultLane;
 		}
-	
+
 		return foundLane;
 	}
 
 	public static Lane getLaneFromCard(InternalConfig iCfg, Access accessCfg, String cardId, String laneType) {
 		Lane lane = null;
 		ArrayList<Lane> lanes = null;
-	
+
 		if (iCfg.cache != null) {
 			lanes = iCfg.cache.getTaskBoard(cardId);
 		} else {
@@ -432,9 +436,11 @@ public class LkUtils {
 
 	public static CustomIcon getCustomIcon(InternalConfig iCfg, Access accessCfg, String name) {
 		CustomIcon[] cis = LkUtils.getCustomIcons(iCfg, accessCfg);
-		for (int j = 0; j < cis.length; j++) {
-			if (cis[j].name.equals(name)) {
-				return cis[j];
+		if (cis != null) {
+			for (int j = 0; j < cis.length; j++) {
+				if (cis[j].name.equals(name)) {
+					return cis[j];
+				}
 			}
 		}
 		return null;
@@ -454,13 +460,15 @@ public class LkUtils {
 		LeanKitAccess lka = new LeanKitAccess(accessCfg, iCfg.debugLevel);
 		CustomField[] fields = null;
 		Board brd = null;
-		if (iCfg.cache != null) {			//and store it in the cache if we have one
+		if (iCfg.cache != null) { // and store it in the cache if we have one
 			brd = iCfg.cache.getBoardByTitle(accessCfg.BoardName);
 		} else {
 			brd = lka.fetchBoardFromTitle(accessCfg.BoardName);
-			if ( brd != null) brd = lka.fetchBoardFromId(brd.id);	//Fetch the FULL listing of the board this time
+			if (brd != null)
+				brd = lka.fetchBoardFromId(brd.id); // Fetch the FULL listing of the board this time
 		}
-		if (brd != null) fields = LkUtils.getCustomFields(iCfg, accessCfg, brd.id);
+		if (brd != null)
+			fields = LkUtils.getCustomFields(iCfg, accessCfg, brd.id);
 		return fields;
 	}
 
@@ -482,7 +490,8 @@ public class LkUtils {
 		} else {
 			LeanKitAccess lka = new LeanKitAccess(accessCfg, iCfg.debugLevel);
 			Board brd = lka.fetchBoardFromId(id);
-			if (brd != null) fields = lka.fetchCustomIcons(brd.id).customIcons;
+			if (brd != null)
+				fields = lka.fetchCustomIcons(brd.id).customIcons;
 		}
 		return fields;
 	}
@@ -494,7 +503,8 @@ public class LkUtils {
 		} else {
 			LeanKitAccess lka = new LeanKitAccess(accessCfg, iCfg.debugLevel);
 			Board brd = lka.fetchBoardFromTitle(accessCfg.BoardName);
-			if (brd != null) fields = lka.fetchCustomIcons(brd.id).customIcons;
+			if (brd != null)
+				fields = lka.fetchCustomIcons(brd.id).customIcons;
 		}
 		return fields;
 	}
@@ -511,14 +521,15 @@ public class LkUtils {
 	}
 
 	public static ArrayList<BoardUser> getUsers(InternalConfig iCfg, Access accessCfg) {
-	
+
 		ArrayList<BoardUser> users = null;
 		if (iCfg.cache != null) {
 			users = iCfg.cache.getBoardUsers();
 		} else {
 			LeanKitAccess lka = new LeanKitAccess(accessCfg, iCfg.debugLevel);
 			Board brd = lka.fetchBoardFromTitle(accessCfg.BoardName);
-			if (brd != null) users = lka.fetchUsers(brd.id);
+			if (brd != null)
+				users = lka.fetchUsers(brd.id);
 		}
 		return users;
 	}
@@ -541,18 +552,18 @@ public class LkUtils {
 		details.put("includeExistingUsers", true);
 		details.put("includeCards", false);
 		details.put("isShared", true);
-		details.put("sharedBoardRole","boardUser");
+		details.put("sharedBoardRole", "boardUser");
 		details.put("excludeCompletedAndArchiveViolations", true);
 		return lka.createBoard(details);
 	}
-	
-	public static Board createBoard(InternalConfig cfg, Access accessCfg){
+
+	public static Board createBoard(InternalConfig cfg, Access accessCfg) {
 		LeanKitAccess lka = new LeanKitAccess(cfg.destination, cfg.debugLevel);
 		Board brd = null;
 		JSONObject details = new JSONObject();
 		details.put("title", cfg.destination.BoardName);
 		details.put("isShared", true);
-		details.put("sharedBoardRole","boardUser");
+		details.put("sharedBoardRole", "boardUser");
 		details.put("excludeCompletedAndArchiveViolations", true);
 		brd = lka.createBoard(details);
 		return brd;

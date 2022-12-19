@@ -236,7 +236,9 @@ public class Exporter {
 
 					Integer col = XlUtils.findColumnFromSheet(cfg.itemSheet, ColNames.TITLE);
 					String letter = CellReference.convertNumToColString(col);
-					createChangeRow(chgRowIdx, childRow, "Modify", "Parent",
+					d.p(Debug.INFO, "Creating parent/child relationship for: %s/%s\n",
+							pc.parentId, pc.childId);
+					createChangeRow(chgRowIdx++, childRow, "Modify", "Parent",
 							"='" + pc.boardName + "'!" + letter + (parentRow + 1));
 				}
 			}
