@@ -68,6 +68,14 @@ public class XlUtils {
 		return config;
 	}
 
+	public static String validateSheetName( String longSheetName) {
+		String shortName = longSheetName;
+		if (longSheetName.length() > 32){
+			shortName = longSheetName.substring(0, 15) + ".." + longSheetName.substring(longSheetName.length() - 14);
+		}
+		return shortName;
+	}
+
 	public static ArrayList<Row> getRowsByStringValue(InternalConfig cfg, XSSFSheet sht, String name, String value) {
 		ArrayList<Row> list = new ArrayList<>();
 
@@ -668,7 +676,7 @@ public class XlUtils {
 		while (rIter.hasNext()) {
 			Row row = rIter.next();
 			// Get the sheet with the same name as the board
-			XSSFSheet st = cfg.wb.getSheet(row.getCell(sCol).getStringCellValue());
+			XSSFSheet st = cfg.wb.getSheet(XlUtils.validateSheetName( row.getCell(sCol).getStringCellValue()));
 			if (st != null) {
 				Row targ = findRowByStringValue(st, ColNames.TITLE, parentId);
 				if (targ != null) {

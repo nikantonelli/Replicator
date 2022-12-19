@@ -23,7 +23,7 @@ public class BoardCreator {
 
 		//Check whether user has mistyped url with / on end.
 		if (src.endsWith("/")) src = src.substring(0, src.length()-1);
-		if (dst.endsWith("/")) src = dst.substring(0, dst.length()-1);
+		if (dst.endsWith("/")) dst = dst.substring(0, dst.length()-1);
 
 		if (src.equals(dst)){
 			Board brd = LkUtils.duplicateBoard( cfg);

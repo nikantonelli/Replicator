@@ -48,7 +48,7 @@ public class Importer {
 		 * exporter directly
 		 */
 
-		cfg.changesSheet = cfg.wb.getSheet(InternalConfig.CHANGES_SHEET_NAME + cfg.source.BoardName);
+		cfg.changesSheet = cfg.wb.getSheet(XlUtils.validateSheetName( InternalConfig.CHANGES_SHEET_NAME + cfg.source.BoardName));
 
 		if (null == cfg.changesSheet) {
 			d.p(Debug.ERROR, "Cannot find required Changes sheet in file: %s\n", cfg.xlsxfn);

@@ -86,22 +86,22 @@ public class Exporter {
 	}
 
 	public String getSheetName() {
-		return InternalConfig.CHANGES_SHEET_NAME + cfg.source.BoardName;
+		return XlUtils.validateSheetName( InternalConfig.CHANGES_SHEET_NAME + cfg.source.BoardName);
 	}
 
 	public String cleanSheets() {
-		Integer chShtIdx = null;
+		Integer shtIdx = null;
 		String cShtName = getSheetName();
 
-		chShtIdx = cfg.wb.getSheetIndex(cShtName);
-		if (chShtIdx >= 0) {
-			cfg.wb.removeSheetAt(chShtIdx);
+		shtIdx = cfg.wb.getSheetIndex(cShtName);
+		if (shtIdx >= 0) {
+			cfg.wb.removeSheetAt(shtIdx);
 		}
 
 		// Now make sure we don't have any left over item information
-		chShtIdx = cfg.wb.getSheetIndex(cfg.source.BoardName);
-		if (chShtIdx >= 0) {
-			cfg.wb.removeSheetAt(chShtIdx);
+		shtIdx = cfg.wb.getSheetIndex(XlUtils.validateSheetName(cfg.source.BoardName));
+		if (shtIdx >= 0) {
+			cfg.wb.removeSheetAt(shtIdx);
 		}
 		return cShtName;
 
@@ -114,7 +114,7 @@ public class Exporter {
 	}
 
 	public String[] newItmSheet() {
-		cfg.itemSheet = cfg.wb.createSheet(cfg.source.BoardName);
+		cfg.itemSheet = cfg.wb.createSheet(XlUtils.validateSheetName(cfg.source.BoardName));
 
 		/**
 		 * Now create the Item Sheet layout
@@ -222,7 +222,7 @@ public class Exporter {
 		Iterator<ParentChild> pci = parentChild.iterator();
 		while (pci.hasNext()) {
 			ParentChild pc = pci.next();
-			Integer parentShtIdx = cfg.wb.getSheetIndex(pc.boardName);
+			Integer parentShtIdx = cfg.wb.getSheetIndex(XlUtils.validateSheetName(pc.boardName));
 			if (parentShtIdx >= 0) {
 				XSSFSheet pSht = cfg.wb.getSheetAt(parentShtIdx);
 
@@ -239,7 +239,7 @@ public class Exporter {
 					d.p(Debug.INFO, "Creating parent/child relationship for: %s/%s\n",
 							pc.parentId, pc.childId);
 					createChangeRow(chgRowIdx++, childRow, "Modify", "Parent",
-							"='" + pc.boardName + "'!" + letter + (parentRow + 1));
+							"='" + XlUtils.validateSheetName(pc.boardName) + "'!" + letter + (parentRow + 1));
 				}
 			}
 		}
@@ -447,7 +447,7 @@ public class Exporter {
 								// Increment the row index ready for the item row create
 								itmRow++;
 								createChangeRow(chgRow, item, "Modify", "Task",
-										"='" + cfg.source.BoardName + "'!A" + (itmRow + 1));
+										"='" + XlUtils.validateSheetName(cfg.source.BoardName) + "'!A" + (itmRow + 1));
 
 								// Now create the item row itself
 								// Changes changesMade = new Changes(0,0); //Testing!
@@ -575,7 +575,7 @@ public class Exporter {
 		chgRow.createCell(localCellIdx++, CellType.STRING).setCellValue(cfg.group);
 		chgRow.createCell(localCellIdx++, CellType.FORMULA)
 		//	.setCellFormula("'" + cfg.source.BoardName + "'!B" + (IRIdx + 1));
-				.setCellFormula("'" + cfg.source.BoardName + "'!" + XlUtils.findColumnLetterFromSheet(cfg.itemSheet, "title")
+				.setCellFormula("'" + XlUtils.validateSheetName(cfg.source.BoardName) + "'!" + XlUtils.findColumnLetterFromSheet(cfg.itemSheet, "title")
 				+ (IRIdx + 1));
 		chgRow.createCell(localCellIdx++, CellType.STRING).setCellValue(action);
 		chgRow.createCell(localCellIdx++, CellType.STRING).setCellValue(field);
