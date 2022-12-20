@@ -5,6 +5,7 @@ import java.util.Date;
 import java.util.Iterator;
 
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.util.CellReference;
 import org.apache.poi.xssf.usermodel.XSSFFormulaEvaluator;
@@ -152,8 +153,9 @@ public class Importer {
 				}
 			}
 			String action = change.getCell(cc.action).getStringCellValue();
-			if (runAction) {
-				if (action.equals("Create")) {
+			if (action.equals("Create")) {
+
+				if (runAction) {
 					id = doAction(change, item);
 					if (id != null) {
 						if (item.getCell(idCol) == null) {
@@ -166,21 +168,22 @@ public class Importer {
 						d.p(Debug.INFO, "Create card \"%s\" (changes row %s)\n", id, change.getRowNum());
 					}
 				} else {
-					id = doAction(change, item);
-					if (id != null) {
-						d.p(Debug.INFO, "Mod: \"%s\" on card \"%s\" (changes row %s)\n",
-								field, id, change.getRowNum());
-					}
-				}
-				if (id != null) {
-					XlUtils.writeFile(cfg, cfg.xlsxfn, cfg.wb);
-				} else {
-					d.p(Debug.ERROR, "%s",
-							"Got null back from doAction(). Most likely card deleted!\n");
+					id = "Skipping";
+					d.p(Debug.INFO, "Skipping action \"%s\" for card \"%s\" (changes row %s)\n",
+							action, item.getCell(titleCol).getStringCellValue(), change.getRowNum());
 				}
 			} else {
-				d.p(Debug.INFO, "Skipping action \"%s\" for card \"%s\" (changes row %s)\n",
-						action, item.getCell(titleCol).getStringCellValue(), change.getRowNum());
+				id = doAction(change, item);
+				if (id != null) {
+					d.p(Debug.INFO, "Mod: \"%s\" on card \"%s\" (changes row %s)\n",
+							field, id, change.getRowNum());
+				}
+			}
+			if (id != null) {
+				XlUtils.writeFile(cfg, cfg.xlsxfn, cfg.wb);
+			} else {
+				d.p(Debug.ERROR, "%s",
+						"Got null back from doAction(). Most likely card deleted!\n");
 			}
 		}
 	}
@@ -248,12 +251,15 @@ public class Importer {
 			return card.id;
 
 		} else if (change.getCell(cc.action).getStringCellValue().equalsIgnoreCase("Modify")) {
-			// Fetch the ID from the item and then fetch that card
-			Card card = LkUtils.getCard(cfg, cfg.destination, item.getCell(idCol).getStringCellValue());
+			// Scan for the item and then fetch that card
+			//Card card = LkUtils.getCard(cfg, cfg.destination, item.getCell(idCol).getStringCellValue());
+			Cell colcell = change.getCell(cc.row);
+			Card card = XlUtils.findCardByTitle(cfg, colcell.getStringCellValue());
+			
 			Card newCard = null;
 
 			if (card == null) {
-				d.p(Debug.ERROR, "Could not locate card \"%s\"\n", item.getCell(idCol).getStringCellValue());
+				d.p(Debug.ERROR, "Could not locate \"single\" card with title: \"%s\"\n", item.getCell(idCol).getStringCellValue());
 			} else {
 				// Don't need this when modifying an existing item.
 				if (fieldLst.has("boardId")) {

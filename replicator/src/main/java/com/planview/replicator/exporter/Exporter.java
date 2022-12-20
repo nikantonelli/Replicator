@@ -86,7 +86,7 @@ public class Exporter {
 	}
 
 	public String getSheetName() {
-		return XlUtils.validateSheetName( InternalConfig.CHANGES_SHEET_NAME + cfg.source.BoardName);
+		return XlUtils.validateSheetName(InternalConfig.CHANGES_SHEET_NAME + cfg.source.BoardName);
 	}
 
 	public String cleanSheets() {
@@ -234,12 +234,31 @@ public class Exporter {
 							pc.parentId, pc.childId);
 				} else {
 
-					Integer col = XlUtils.findColumnFromSheet(cfg.itemSheet, ColNames.TITLE);
-					String letter = CellReference.convertNumToColString(col);
-					d.p(Debug.INFO, "Creating parent/child relationship for: %s/%s\n",
-							pc.parentId, pc.childId);
-					createChangeRow(chgRowIdx++, childRow, "Modify", "Parent",
-							"='" + XlUtils.validateSheetName(pc.boardName) + "'!" + letter + (parentRow + 1));
+					String type = cfg.itemSheet.getRow(childRow)
+							.getCell(XlUtils.findColumnFromName(cfg.itemSheet.getRow(0), ColNames.TYPE))
+							.getStringCellValue();
+					boolean runAction = true;
+					// Demo reset use
+					if (cfg.ignTypes != null) {
+						for (int i = 0; i < cfg.ignTypes.length; i++) {
+							if (type != null) {
+								if (type.equals(cfg.ignTypes[i])) {
+									runAction = false;
+								}
+							}
+						}
+					}
+					if (runAction) {
+						Integer col = XlUtils.findColumnFromSheet(cfg.itemSheet, ColNames.TITLE);
+						String letter = CellReference.convertNumToColString(col);
+						d.p(Debug.INFO, "Creating parent/child relationship for: %s/%s\n",
+								pc.parentId, pc.childId);
+						createChangeRow(chgRowIdx++, childRow, "Modify", "Parent",
+								"='" + XlUtils.validateSheetName(pc.boardName) + "'!" + letter + (parentRow + 1));
+					} else {
+						d.p(Debug.INFO, "Skipping parent/child relationship for: %s/%s\n",
+								pc.parentId, pc.childId);
+					}
 				}
 			}
 		}
@@ -407,10 +426,10 @@ public class Exporter {
 						if (fv != null) {
 							ParentCard[] pcs = (ParentCard[]) fv;
 							for (int j = 0; j < pcs.length; j++) {
-									Card crd = LkUtils.getCard(cfg, cfg.source, pcs[j].cardId);
-									Board brd = LkUtils.getBoardById(cfg, cfg.source, pcs[j].boardId);
-									parentChild.add(new ParentChild(brd.title, crd.title, c.id));
-								}
+								Card crd = LkUtils.getCard(cfg, cfg.source, pcs[j].cardId);
+								Board brd = LkUtils.getBoardById(cfg, cfg.source, pcs[j].boardId);
+								parentChild.add(new ParentChild(brd.title, crd.title, c.id));
+							}
 						}
 						break;
 					}
@@ -574,9 +593,10 @@ public class Exporter {
 		Row chgRow = cfg.changesSheet.createRow(CRIdx);
 		chgRow.createCell(localCellIdx++, CellType.STRING).setCellValue(cfg.group);
 		chgRow.createCell(localCellIdx++, CellType.FORMULA)
-		//	.setCellFormula("'" + cfg.source.BoardName + "'!B" + (IRIdx + 1));
-				.setCellFormula("'" + XlUtils.validateSheetName(cfg.source.BoardName) + "'!" + XlUtils.findColumnLetterFromSheet(cfg.itemSheet, "title")
-				+ (IRIdx + 1));
+				// .setCellFormula("'" + cfg.source.BoardName + "'!B" + (IRIdx + 1));
+				.setCellFormula("'" + XlUtils.validateSheetName(cfg.source.BoardName) + "'!"
+						+ XlUtils.findColumnLetterFromSheet(cfg.itemSheet, "title")
+						+ (IRIdx + 1));
 		chgRow.createCell(localCellIdx++, CellType.STRING).setCellValue(action);
 		chgRow.createCell(localCellIdx++, CellType.STRING).setCellValue(field);
 
