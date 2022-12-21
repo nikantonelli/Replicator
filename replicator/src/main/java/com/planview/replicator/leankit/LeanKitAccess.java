@@ -126,7 +126,7 @@ public class LeanKitAccess {
 						fieldName = "comments";
 						break;
 					default:
-						d.p(Debug.ERROR, "Unsupported item type returned from server API: %s\n", bd);
+						d.p(Debug.ERROR, "Unsupported item type requested from server API: %s\n", bd);
 						return null;
 
 				}
@@ -572,12 +572,13 @@ public class LeanKitAccess {
 			d.p(Debug.ERROR, "Cannot encode board name %s\n", BoardName);
 			return null;
 		}
-
-		ArrayList<Board> results = read(Board.class);
-		if ((results != null) && (results.size() > 0)) {
-			return results.get(0);
+		ArrayList<Board> boards = read(Board.class);
+		for (int i = 0; i < boards.size(); i++){
+			if (boards.get(i).title.equals(BoardName)){
+				return boards.get(i);
+			}
 		}
-		return null;
+		return null ;
 	}
 
 	public Board fetchBoardFromId(String id) {
@@ -758,7 +759,12 @@ public class LeanKitAccess {
 		reqParams.add(new BasicNameValuePair("search", encoded));
 		reqParams.add(new BasicNameValuePair("board", boardId));
 		ArrayList<Card> cards = read(Card.class);
-		return (cards.size() != 1) ? null : cards.get(0);
+		for (int i = 0; i < cards.size(); i++){
+			if (cards.get(i).title.equals(title)){
+				return cards.get(i);
+			}
+		}
+		return null ;
 	}
 
 	public ArrayList<BoardUser> fetchUsers(String boardId) {

@@ -5,6 +5,7 @@ import java.util.Date;
 import java.util.Iterator;
 
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.util.CellReference;
 import org.apache.poi.xssf.usermodel.XSSFFormulaEvaluator;
@@ -251,14 +252,34 @@ public class Importer {
 
 		} else if (change.getCell(cc.action).getStringCellValue().equalsIgnoreCase("Modify")) {
 			// Scan for the item and then fetch that card
-			//Card card = LkUtils.getCard(cfg, cfg.destination, item.getCell(idCol).getStringCellValue());
+			// Card card = LkUtils.getCard(cfg, cfg.destination,
+			// item.getCell(idCol).getStringCellValue());
 			Cell colcell = change.getCell(cc.row);
-			Card card = XlUtils.findCardByTitle(cfg, colcell.getStringCellValue());
-			
+			String cellval = null;
+			switch (colcell.getCellType()) {
+				case FORMULA: {
+					String ccf = change.getCell(cc.row).getCellFormula();
+					CellReference cca = new CellReference(ccf);
+					XSSFSheet cSheet = cfg.wb.getSheet(cca.getSheetName());
+					Row target = cSheet.getRow(cca.getRow());
+					cellval = target.getCell(cca.getCol()).getStringCellValue();
+					break;
+				}
+				case STRING: {
+					cellval = colcell.getStringCellValue();
+					break;
+				}
+				default: {
+					break;
+				}
+			}
+			Card card = XlUtils.findCardByTitle(cfg, cellval);
+
 			Card newCard = null;
 
 			if (card == null) {
-				d.p(Debug.ERROR, "Could not locate \"single\" card with title: \"%s\"\n", item.getCell(idCol).getStringCellValue());
+				d.p(Debug.ERROR, "Could not locate \"single\" card with title: \"%s\"\n",
+						item.getCell(XlUtils.findColumnFromName(iFirst, ColNames.TITLE)).getStringCellValue());
 			} else {
 				// Don't need this when modifying an existing item.
 				if (fieldLst.has("boardId")) {
@@ -271,6 +292,7 @@ public class Importer {
 				SupportedXlsxFields allFields = new SupportedXlsxFields();
 
 				try {
+
 					// If its part of the fields we don't want, then ignore
 					(allFields.new ReadOnly()).getClass().getField(field);
 				} catch (NoSuchFieldException e) {

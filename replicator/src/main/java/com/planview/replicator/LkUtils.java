@@ -249,7 +249,7 @@ public class LkUtils {
 
 	public static boolean deleteBoard(InternalConfig iCfg, Access accessCfg) {
 		Board brd = getBoardByTitle(iCfg, accessCfg);
-		if (brd != null){
+		if (brd != null) {
 			deleteBoardById(iCfg, accessCfg, brd.id);
 			return true;
 		}
@@ -552,27 +552,26 @@ public class LkUtils {
 	public static Board duplicateBoard(InternalConfig cfg) {
 		LeanKitAccess lka = new LeanKitAccess(cfg.source, cfg.debugLevel);
 		Board brd = lka.fetchBoardFromTitle(cfg.source.BoardName);
-		JSONObject details = new JSONObject();
-		details.put("title", cfg.destination.BoardName);
-		details.put("fromBoardId", brd.id);
-		details.put("includeExistingUsers", true);
-		details.put("includeCards", false);
-		details.put("isShared", true);
-		details.put("sharedBoardRole", "boardUser");
-		details.put("excludeCompletedAndArchiveViolations", true);
-		return lka.createBoard(details);
+		if (brd != null) {
+			JSONObject details = new JSONObject();
+			details.put("title", cfg.destination.BoardName);
+			details.put("fromBoardId", brd.id);
+			details.put("includeExistingUsers", true);
+			details.put("includeCards", false);
+			details.put("isShared", true);
+			details.put("sharedBoardRole", "boardUser");
+			details.put("excludeCompletedAndArchiveViolations", true);
+			return lka.createBoard(details);
+		} else {
+			return null;
+		}
 	}
 
 	public static Board createBoard(InternalConfig cfg, Access accessCfg) {
 		LeanKitAccess lka = new LeanKitAccess(cfg.destination, cfg.debugLevel);
-		Board brd = null;
 		JSONObject details = new JSONObject();
 		details.put("title", cfg.destination.BoardName);
-		details.put("isShared", true);
-		details.put("sharedBoardRole", "boardUser");
-		details.put("excludeCompletedAndArchiveViolations", true);
-		brd = lka.createBoard(details);
-		return brd;
+		return lka.createBoard(details);
 	}
 
 	public static void createCustomIcon(InternalConfig cfg, Access destination, CustomIcon customIcon) {

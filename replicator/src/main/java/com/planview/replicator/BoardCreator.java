@@ -52,8 +52,11 @@ public class BoardCreator {
 							cfg.destination.BoardName);
 					return false;
 				}
-				details.put("allowUsersToDeleteCards", true);
+				details.put("allowUsersToDeleteCards", srcBrd.allowUsersToDeleteCards);
+				details.put("baseWipOnCardSize", srcBrd.baseWipOnCardSize);
+				details.put("classOfServiceEnabled", srcBrd.classOfServiceEnabled);
 				details.put("customIconFieldLabel", srcBrd.customIconFieldLabel);
+				details.put("description", srcBrd.description);
 
 				// TODO: Need to check and warn over mismatch in board levels
 				details.put("boardLevel", srcBrd.level.depth);

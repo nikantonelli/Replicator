@@ -77,6 +77,7 @@ public class Main {
 			rowItr = configSht.iterator();
 			row = rowItr.next(); // Move past headers
 			while (rowItr.hasNext()) {
+				Boolean ok = true;
 				row = rowItr.next();
 				// 1
 				config = XlUtils.setConfig(config, row, fieldMap);
@@ -106,10 +107,10 @@ public class Main {
 
 				if (config.remakeBoard) {
 					BoardCreator bd = new BoardCreator(config);
-					bd.go();
+					ok = bd.go();
 				}
 
-				if (config.importer || config.obliterate) {
+				if (ok && (config.importer || config.obliterate)){
 					Importer imp = new Importer(config);
 					imp.go();
 				}
