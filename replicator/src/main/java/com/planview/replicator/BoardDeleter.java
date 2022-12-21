@@ -8,10 +8,12 @@ public class BoardDeleter {
         cfg = config;
 		d.setLevel(config.debugLevel);
     }
-
 	
     public void go() {
-		LkUtils.deleteBoard(cfg, cfg.destination);
+		if ( LkUtils.deleteBoard(cfg, cfg.destination)){
+			d.p(Debug.INFO, "Deleted board \"%s\"\n", cfg.destination.BoardName);
+		} else {
+			d.p(Debug.WARN, "Delete of board \"%s\" unsuccessful\n", cfg.destination.BoardName);
+		}
 	}
 }
-

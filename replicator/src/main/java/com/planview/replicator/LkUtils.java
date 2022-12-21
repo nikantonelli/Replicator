@@ -117,7 +117,10 @@ public class LkUtils {
 	public static ArrayList<Card> getCardIdsFromBoard(InternalConfig iCfg, Access accessCfg) {
 		LeanKitAccess lka = new LeanKitAccess(accessCfg, iCfg.debugLevel);
 		Board brd = getBoardByTitle(iCfg, accessCfg);
-		ArrayList<Card> cards = lka.fetchCardIdsFromBoard(brd.id, iCfg.exportArchived);
+		ArrayList<Card> cards = null;
+		if (brd != null) {
+			cards = lka.fetchCardIdsFromBoard(brd.id, iCfg.exportArchived);
+		}
 		return cards;
 	}
 
@@ -244,10 +247,13 @@ public class LkUtils {
 		lka.archiveBoard(boardId);
 	}
 
-	public static void deleteBoard(InternalConfig iCfg, Access accessCfg) {
+	public static boolean deleteBoard(InternalConfig iCfg, Access accessCfg) {
 		Board brd = getBoardByTitle(iCfg, accessCfg);
-		if (brd != null)
+		if (brd != null){
 			deleteBoardById(iCfg, accessCfg, brd.id);
+			return true;
+		}
+		return false;
 	}
 
 	public static void deleteBoardById(InternalConfig iCfg, Access accessCfg, String boardId) {

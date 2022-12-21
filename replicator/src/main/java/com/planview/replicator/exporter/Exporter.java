@@ -148,24 +148,32 @@ public class Exporter {
 																				// cause alternative actions
 		CustomField[] customFields = LkUtils.getCustomFields(cfg, cfg.source);
 
-		Integer checkFieldsLength = rwFields.length + customFields.length + pseudoFields.length;
-		Integer outFieldsLength = rwFields.length + customFields.length;
+		Integer checkFieldsLength = ((rwFields != null) ? rwFields.length : 0) +
+				((customFields != null) ? customFields.length : 0) +
+				((pseudoFields != null) ? pseudoFields.length : 0);
+
+		Integer outFieldsLength = ((rwFields != null) ? rwFields.length : 0) +
+				((customFields != null) ? customFields.length : 0);
 
 		String[] checkFields = new String[checkFieldsLength];
 		Integer cfi = 0;
 		String[] outFields = new String[outFieldsLength];
 		Integer ofi = 0;
 
-		for (int i = 0; i < rwFields.length; i++) {
-			outFields[ofi++] = checkFields[cfi++] = rwFields[i].getName();
+		if (rwFields != null) {
+			for (int i = 0; i < rwFields.length; i++) {
+				outFields[ofi++] = checkFields[cfi++] = rwFields[i].getName();
+			}
 		}
-
-		for (int i = 0; i < customFields.length; i++) {
-			outFields[ofi++] = checkFields[cfi++] = customFields[i].label;
+		if (customFields != null) {
+			for (int i = 0; i < customFields.length; i++) {
+				outFields[ofi++] = checkFields[cfi++] = customFields[i].label;
+			}
 		}
-
-		for (int i = 0; i < pseudoFields.length; i++) {
-			checkFields[cfi++] = pseudoFields[i].getName();
+		if (pseudoFields != null) {
+			for (int i = 0; i < pseudoFields.length; i++) {
+				checkFields[cfi++] = pseudoFields[i].getName();
+			}
 		}
 
 		// Put column headers out
@@ -186,7 +194,12 @@ public class Exporter {
 		 * Read all the normal cards on the board - up to a limit?
 		 */
 		ArrayList<Card> cards = LkUtils.getCardIdsFromBoard(cfg, cfg.source);
+		if (cards == null) {
+			d.p(Debug.ERROR, "Cannot identify cards on board: \"%s\"", cfg.source.BoardName);
+			System.exit(0);
+		}
 		Collections.sort(cards);
+		ArrayList<Row> addModifyRows = new ArrayList<>();
 		/**
 		 * Write all the cards out to the cfg.itemSheet
 		 */
@@ -205,7 +218,13 @@ public class Exporter {
 			createChangeRow(chgRowIdx, itmRowIdx, "Create", "", "");
 			Changes changeTotal = createItemRowFromCard(chgRowIdx, itmRowIdx, c, checkFields); // checkFields contains
 																								// extra
+			Row thisRow = cfg.itemSheet.getRow(itmRowIdx);
+			String type = thisRow.getCell(XlUtils.findColumnFromName(cfg.itemSheet.getRow(0), ColNames.TYPE))
+					.getStringCellValue();
 
+			if (!XlUtils.notIgnoreType(cfg, type)) {
+				addModifyRows.add(thisRow);
+			}
 			chgRowIdx = changeTotal.getChangeRow();
 			itmRowIdx = changeTotal.getItemRow();
 
@@ -215,6 +234,17 @@ public class Exporter {
 
 		}
 
+		/**
+		 * Scan the ignore type cards so we can move them to the right place
+		 */
+		Iterator<Row> rowItr = addModifyRows.iterator();
+		while (rowItr.hasNext()) {
+			Row row = rowItr.next();
+			Integer col = XlUtils.findColumnFromSheet(cfg.itemSheet, ColNames.LANE);
+			String letter = CellReference.convertNumToColString(col);
+			createChangeRow(chgRowIdx++, row.getRowNum(), "Modify", ColNames.LANE,
+					"='" + cfg.itemSheet.getSheetName() + "'!" + letter + (row.getRowNum() + 1));
+		}
 		/**
 		 * Now scan the parent/child register and add "Modify" lines
 		 */
@@ -237,17 +267,8 @@ public class Exporter {
 					String type = cfg.itemSheet.getRow(childRow)
 							.getCell(XlUtils.findColumnFromName(cfg.itemSheet.getRow(0), ColNames.TYPE))
 							.getStringCellValue();
-					boolean runAction = true;
-					// Demo reset use
-					if (cfg.ignTypes != null) {
-						for (int i = 0; i < cfg.ignTypes.length; i++) {
-							if (type != null) {
-								if (type.equals(cfg.ignTypes[i])) {
-									runAction = false;
-								}
-							}
-						}
-					}
+					boolean runAction = XlUtils.notIgnoreType(cfg, type);
+
 					if (runAction) {
 						Integer col = XlUtils.findColumnFromSheet(cfg.itemSheet, ColNames.TITLE);
 						String letter = CellReference.convertNumToColString(col);

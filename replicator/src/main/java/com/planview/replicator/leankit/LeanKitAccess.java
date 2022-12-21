@@ -502,28 +502,28 @@ public class LeanKitAccess {
 		return execute(Board.class);
 	}
 
-	public void archiveBoard(String id) {
+	public String archiveBoard(String id) {
 		reqType = "POST";
 		reqUrl = "/io/board/" + id + "/archive";
 		reqParams.clear();
 		reqHdrs.clear();
-		processRequest();
+		return processRequest();
 	}
 
-	public void deleteCard(String id) {
+	public String deleteCard(String id) {
 		reqType = "DELETE";
 		reqHdrs.clear();
 		reqParams.clear();
 		reqUrl = "/io/card/" + id;
-		processRequest();
+		return processRequest();
 	}
 
-	public void deleteBoard(String id) {
+	public String deleteBoard(String id) {
 		reqType = "DELETE";
 		reqHdrs.clear();
 		reqParams.clear();
 		reqUrl = "/io/board/" + id;
-		processRequest();
+		return processRequest();
 	}
 
 	public ArrayList<Comment> fetchCommentsForCard(Card cd) {
@@ -688,9 +688,7 @@ public class LeanKitAccess {
 		MultipartEntityBuilder mpeb = MultipartEntityBuilder.create().setMode(HttpMultipartMode.BROWSER_COMPATIBLE)
 				.addTextBody("Description", "Auto-generated from Script").addPart("file", fb);
 		reqEnt = mpeb.build();
-
-		String status = processRequest();
-		return status;
+		return processRequest();
 	}
 
 	private Card prioritiseCard(Card card, int idx) {

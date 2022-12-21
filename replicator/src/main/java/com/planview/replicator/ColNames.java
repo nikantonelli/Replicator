@@ -11,6 +11,7 @@ public class ColNames {
 
 	public final static String TITLE = "title";
 	public final static String TYPE = "type";
+	public final static String LANE = "lane";
 	
 	public final static String IGNORE_LIST = "Import Ignore";
 }

@@ -37,6 +37,21 @@ public class XlUtils {
 	 * First put all the spreadsheet related routines here:
 	 */
 
+	 public static boolean notIgnoreType(InternalConfig cfg,  String type){
+		// Demo reset use
+		boolean runAction = true;
+		if (cfg.ignTypes != null) {
+			for (int i = 0; i < cfg.ignTypes.length; i++) {
+				if (type != null) {
+					if (type.equals(cfg.ignTypes[i])) {
+						runAction = false;
+					}
+				}
+			}
+		}
+		return runAction;
+	 }
+
 	public static InternalConfig setConfig(InternalConfig config, Row row, HashMap<String, Integer> fieldMap) {
 		config.source = new Access(
 				row.getCell(fieldMap.get(InternalConfig.SOURCE_URL_COLUMN)).getStringCellValue(),
