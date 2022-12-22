@@ -328,7 +328,7 @@ public class Exporter {
 
 		Row iRow = cfg.itemSheet.createRow(itmRow);
 		d.p(Debug.INFO, "Creating row %d for id: %s (%s)\n", itmRow, c.id,
-				(c.customId.value != null) ? c.customId.value : c.title);
+				((c.customId.value != null) && (c.customId.value.length() != 0)) ? c.customId.value : c.title);
 		// We need to keep a separate counter for the fields we actually write out
 		Integer fieldCounter = 1;
 		for (int i = 0; i < pbFields.length; i++) {
@@ -418,7 +418,10 @@ public class Exporter {
 					case "customId": {
 						Object fv = c.getClass().getField(pbFields[i]).get(c);
 						if (fv != null) {
-							iRow.createCell(fieldCounter, CellType.STRING).setCellValue(((CustomId) fv).value);
+							CustomId ci = (CustomId) fv;
+							if ((ci.value != null) && (ci.value.length() != 0)) {
+								iRow.createCell(fieldCounter, CellType.STRING).setCellValue(ci.value);
+							}
 						}
 						fieldCounter++;
 						break;
