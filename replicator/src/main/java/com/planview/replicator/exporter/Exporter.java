@@ -256,6 +256,7 @@ public class Exporter {
 					ColNames.TYPE,
 					ColNames.PLANNED_END,
 					ColNames.PLANNED_START,
+					ColNames.EXTERNAL_LINK,
 					// Can't patch color back in. It comes from the cardtype
 					ColNames.COLOUR
 			};
