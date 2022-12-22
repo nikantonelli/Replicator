@@ -319,16 +319,16 @@ public class Importer {
 										String[] users = usersList.split(",");
 										ArrayList<String> usersToPut = new ArrayList<>();
 										for (int i = 0; i < users.length; i++) {
-											User realUser = LkUtils.getUser(cfg, cfg.destination, users[i]);
 
 											// Check if they are a board user so we don't error.
 											for (int j = 0; j < boardUsers.size(); j++) {
-												if (realUser.id.equals(boardUsers.get(j).id)) {
-													usersToPut.add(realUser.id);
+												if (users[i].equals(boardUsers.get(j).emailAddress)) {
+													usersToPut.add(boardUsers.get(j).userId);
 												}
 											}
 										}
-										fld.put("assignedUserIds", usersToPut.toArray());
+										vals.put("value",usersToPut.toArray());
+										fld.put("assignedUserIds", vals);
 									}
 								}
 							}
