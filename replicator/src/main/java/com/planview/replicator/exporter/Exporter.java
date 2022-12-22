@@ -263,10 +263,12 @@ public class Exporter {
 					continue;
 				}
 				String letter = CellReference.convertNumToColString(i);
-				d.p(Debug.DEBUG, "    : %s to \"%s\"\n",
-						fieldName, row.getCell(XlUtils.findColumnFromName(iFirst, fieldName)));
-				createChangeRow(chgRowIdx++, row.getRowNum(), "Modify", fieldName,
-						"='" + cfg.itemSheet.getSheetName() + "'!" + letter + (row.getRowNum() + 1));
+				if (row.getCell(XlUtils.findColumnFromName(iFirst, fieldName)) != null) {
+					d.p(Debug.DEBUG, "    : %s to \"%s\"\n",
+							fieldName, row.getCell(XlUtils.findColumnFromName(iFirst, fieldName)));
+					createChangeRow(chgRowIdx++, row.getRowNum(), "Modify", fieldName,
+							"='" + cfg.itemSheet.getSheetName() + "'!" + letter + (row.getRowNum() + 1));
+				}
 			}
 		}
 		/**
