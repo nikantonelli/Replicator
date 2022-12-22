@@ -263,7 +263,18 @@ public class Exporter {
 					continue;
 				}
 				String letter = CellReference.convertNumToColString(i);
-				if (row.getCell(XlUtils.findColumnFromName(iFirst, fieldName)) != null) {
+				Cell targetCell = row.getCell(XlUtils.findColumnFromName(iFirst, fieldName));
+				boolean writeItOut = true;
+				if (targetCell == null) {
+					writeItOut = false;
+				} else {
+					if ((targetCell.getCellType() == CellType.STRING) &&
+							(targetCell.getStringCellValue().length() == 0)) {
+						writeItOut = false;
+					}
+				}
+
+				if (writeItOut) {
 					d.p(Debug.DEBUG, "    : %s to \"%s\"\n",
 							fieldName, row.getCell(XlUtils.findColumnFromName(iFirst, fieldName)));
 					createChangeRow(chgRowIdx++, row.getRowNum(), "Modify", fieldName,
