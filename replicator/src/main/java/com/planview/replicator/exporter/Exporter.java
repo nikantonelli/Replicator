@@ -236,31 +236,35 @@ public class Exporter {
 		}
 
 		/**
-		 * Scan the ignore type cards so we can move them to the right place and update all fields
+		 * Scan the ignore type cards so we can move them to the right place and update
+		 * all fields
 		 */
 		Iterator<Row> rowItr = addModifyRows.iterator();
 		while (rowItr.hasNext()) {
-			Row row = rowItr.next();
-			short numCells = row.getLastCellNum();
 			Row iFirst = cfg.itemSheet.getRow(0);
+			Row row = rowItr.next();
+			// Get last cell from the row rather than iFirst to minimise the number of
+			// Modify lines.
+			short numCells = row.getLastCellNum();
 
 			String[] lanesToIgnore = {
-				ColNames.ID,
-				ColNames.SOURCE_ID,
-				ColNames.TITLE,
-				ColNames.TYPE,
-				ColNames.PLANNED_END,
-				ColNames.PLANNED_START
+					ColNames.ID,
+					ColNames.SOURCE_ID,
+					ColNames.TITLE,
+					ColNames.TYPE,
+					ColNames.PLANNED_END,
+					ColNames.PLANNED_START
 			};
-
+			d.p(Debug.INFO, "Creating Modify rows for: \"%s\"\n",
+					row.getCell(XlUtils.findColumnFromName(iFirst, ColNames.TITLE)));
 			for (int i = 0; i < numCells; i++) {
 				String fieldName = iFirst.getCell(i).getStringCellValue();
-				if (ArrayUtils.contains(lanesToIgnore, fieldName)){
+				if (ArrayUtils.contains(lanesToIgnore, fieldName)) {
 					continue;
 				}
 				String letter = CellReference.convertNumToColString(i);
-				d.p(Debug.INFO, "Creating Modify row for: %s on %s\n",
-					fieldName, row.getCell(XlUtils.findColumnFromName(iFirst, ColNames.TITLE)));
+				d.p(Debug.DEBUG, "    : %s to \"%s\"\n",
+						fieldName, row.getCell(XlUtils.findColumnFromName(iFirst, fieldName)));
 				createChangeRow(chgRowIdx++, row.getRowNum(), "Modify", fieldName,
 						"='" + cfg.itemSheet.getSheetName() + "'!" + letter + (row.getRowNum() + 1));
 			}
@@ -631,13 +635,14 @@ public class Exporter {
 
 	private void createChangeRow(Integer CRIdx, Integer IRIdx, String action, String field, String value) {
 		Integer localCellIdx = 0;
+		String cellFormula = "'" + XlUtils.validateSheetName(cfg.source.BoardName) + "'!"
+				+ XlUtils.findColumnLetterFromSheet(cfg.itemSheet, "title")
+				+ (IRIdx + 1);
 		Row chgRow = cfg.changesSheet.createRow(CRIdx);
 		chgRow.createCell(localCellIdx++, CellType.STRING).setCellValue(cfg.group);
 		chgRow.createCell(localCellIdx++, CellType.FORMULA)
 				// .setCellFormula("'" + cfg.source.BoardName + "'!B" + (IRIdx + 1));
-				.setCellFormula("'" + XlUtils.validateSheetName(cfg.source.BoardName) + "'!"
-						+ XlUtils.findColumnLetterFromSheet(cfg.itemSheet, "title")
-						+ (IRIdx + 1));
+				.setCellFormula(cellFormula);
 		chgRow.createCell(localCellIdx++, CellType.STRING).setCellValue(action);
 		chgRow.createCell(localCellIdx++, CellType.STRING).setCellValue(field);
 
