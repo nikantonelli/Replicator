@@ -248,12 +248,16 @@ public class Exporter {
 			short numCells = row.getLastCellNum();
 
 			String[] lanesToIgnore = {
+					// These are internal
 					ColNames.ID,
 					ColNames.SOURCE_ID,
+					// E1 sets these
 					ColNames.TITLE,
 					ColNames.TYPE,
 					ColNames.PLANNED_END,
-					ColNames.PLANNED_START
+					ColNames.PLANNED_START,
+					// Can't patch color back in. It comes from the cardtype
+					ColNames.COLOUR
 			};
 			d.p(Debug.INFO, "Creating Modify rows for: \"%s\"\n",
 					row.getCell(XlUtils.findColumnFromName(iFirst, ColNames.TITLE)));

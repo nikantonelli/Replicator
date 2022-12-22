@@ -337,9 +337,30 @@ public class Importer {
 						case ColNames.CUSTOM_ICON: {
 							// Incoming customIcon value is a name. We need to translate to
 							// an id
-							CustomIcon ci = LkUtils.getCustomIcon(cfg, cfg.destination, field);
-							vals.put("value", ci.id);
-							fld.put("customIconId", vals);
+							Cell cstmcell = change.getCell(cc.value);
+							String cstmval = null;
+							switch (cstmcell.getCellType()) {
+								case FORMULA: {
+									String ccf = cstmcell.getCellFormula();
+									CellReference cca = new CellReference(ccf);
+									XSSFSheet cSheet = cfg.wb.getSheet(cca.getSheetName());
+									Row target = cSheet.getRow(cca.getRow());
+									cstmval = target.getCell(cca.getCol()).getStringCellValue();
+									break;
+								}
+								case STRING: {
+									cstmval = cstmcell.getStringCellValue();
+									break;
+								}
+								default: {
+									break;
+								}
+							}
+							CustomIcon ci = LkUtils.getCustomIcon(cfg, cfg.destination, cstmval);
+							if (ci != null) {
+								vals.put("value", ci.id);
+								fld.put("customIconId", vals);
+							}
 							break;
 						}
 						case ColNames.LANE: {
