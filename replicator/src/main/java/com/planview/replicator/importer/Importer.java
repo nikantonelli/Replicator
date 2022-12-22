@@ -141,17 +141,7 @@ public class Importer {
 				}
 			}
 			String id = null;
-			boolean runAction = true;
-			// Demo reset use
-			if (cfg.ignTypes != null) {
-				for (int i = 0; i < cfg.ignTypes.length; i++) {
-					if (item.getCell(typeCol) != null) {
-						if (item.getCell(typeCol).getStringCellValue().equals(cfg.ignTypes[i])) {
-							runAction = false;
-						}
-					}
-				}
-			}
+			boolean runAction = XlUtils.notIgnoreType(cfg, item.getCell(typeCol).getStringCellValue());
 			String action = change.getCell(cc.action).getStringCellValue();
 			if (action.equals("Create")) {
 
@@ -159,12 +149,9 @@ public class Importer {
 					id = doAction(change, item);
 					if (id != null) {
 						if (item.getCell(idCol) == null) {
-
 							item.createCell(idCol);
 						}
 						item.getCell(idCol).setCellValue(id);
-						XSSFFormulaEvaluator.evaluateAllFormulaCells(cfg.wb);
-
 						d.p(Debug.INFO, "Create card \"%s\" (changes row %s)\n", id, change.getRowNum());
 					}
 				} else {
@@ -186,6 +173,7 @@ public class Importer {
 						"Got null back from doAction(). Most likely card deleted!\n");
 			}
 		}
+		XSSFFormulaEvaluator.evaluateAllFormulaCells(cfg.wb);
 	}
 
 	private String doAction(Row change, Row item) {
@@ -315,7 +303,7 @@ public class Importer {
 									.setCellValue(LkUtils.addTask(cfg, cfg.destination, card.id, jsonTask).id);
 							break;
 						}
-						case "assignedUsers": {
+						case ColNames.ASSIGNED_USERS: {
 							/**
 							 * We need to try and match the email address in the destination and fetch the
 							 * userID
@@ -346,7 +334,7 @@ public class Importer {
 							}
 							break;
 						}
-						case "customIcon": {
+						case ColNames.CUSTOM_ICON: {
 							// Incoming customIcon value is a name. We need to translate to
 							// an id
 							CustomIcon ci = LkUtils.getCustomIcon(cfg, cfg.destination, field);
@@ -354,7 +342,7 @@ public class Importer {
 							fld.put("customIconId", vals);
 							break;
 						}
-						case "lane": {
+						case ColNames.LANE: {
 							String[] bits = ((String) XlUtils.getCell(change, cc.value)).split(",");
 							Lane foundLane = LkUtils.getLaneFromBoardTitle(cfg, cfg.destination,
 									cfg.destination.BoardName,

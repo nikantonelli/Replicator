@@ -451,7 +451,7 @@ public class XlUtils {
 				 * Don't include if not present
 				 * 
 				 */
-				case "assignedUsers": {
+				case ColNames.ASSIGNED_USERS: {
 					/**
 					 * We need to try and match the email address in the destination and fetch the
 					 * userID
@@ -488,7 +488,7 @@ public class XlUtils {
 					break;
 				}
 
-				case "blockReason": {
+				case ColNames.BLOCKED_REASON: {
 					String reason = (String) getCell(item, fieldLst.getInt(key));
 					if ((reason != null) && !reason.equals("")) {
 
@@ -498,7 +498,7 @@ public class XlUtils {
 					}
 					break;
 				}
-				case "customIcon": {
+				case ColNames.CUSTOM_ICON: {
 					// Incoming customIcon value is a name. We need to translate to
 					// an id
 					String iconName = (String) getCell(item, fieldLst.getInt(key));
@@ -515,7 +515,7 @@ public class XlUtils {
 					}
 					break;
 				}
-				case "externalLink": {
+				case ColNames.EXTERNAL_LINK: {
 					String link = (String) getCell(item, fieldLst.getInt(key));
 					if (link != null) {
 						if (!link.isBlank()) {
@@ -543,7 +543,7 @@ public class XlUtils {
 					}
 					break;
 				}
-				case "lane": {
+				case ColNames.LANE: {
 					Lane lane = null;
 					String laneType = (String) getCell(item, fieldLst.getInt(key));
 					if (cardId != null) {
@@ -573,10 +573,10 @@ public class XlUtils {
 					}
 					break;
 				}
-				case "size":
+				case ColNames.SIZE:
 					// The index will be set by the exporter in extra 'Modify' rows. This is here
 					// for manually created (import) spreadsheets
-				case "index": {
+				case ColNames.INDEX: {
 					Integer digits = ((Double) getCell(item, fieldLst.getInt(key))).intValue();
 					if (digits != null) {
 						flds.put(key, digits);
@@ -587,7 +587,7 @@ public class XlUtils {
 				/**
 				 * Tags need to be as an array of strings
 				 */
-				case "tags": {
+				case ColNames.TAGS: {
 					String tagLine = (String) getCell(item, fieldLst.getInt(key));
 					if ((tagLine != null) && !tagLine.equals("")) {
 						String[] tags = tagLine.split(",");
@@ -595,7 +595,7 @@ public class XlUtils {
 					}
 					break;
 				}
-				case "type": {
+				case ColNames.TYPE: {
 					String cardtype = (String) getCell(item, fieldLst.getInt(key));
 					ArrayList<CardType> cts = null;
 					if (fieldLst.has("boardId")) {

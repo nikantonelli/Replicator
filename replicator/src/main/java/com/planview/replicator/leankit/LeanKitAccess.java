@@ -41,6 +41,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.planview.replicator.Access;
+import com.planview.replicator.ColNames;
 import com.planview.replicator.Debug;
 
 public class LeanKitAccess {
@@ -799,7 +800,7 @@ public class LeanKitAccess {
 			String key = keys.next();
 			JSONObject values = (JSONObject) updates.get(key);
 			switch (key) {
-				case "blockReason": {
+				case ColNames.BLOCKED_REASON: {
 					if (values.get("value").toString().length() <= 1) {
 
 						JSONObject upd = new JSONObject();
@@ -871,7 +872,7 @@ public class LeanKitAccess {
 					}
 					break;
 				}
-				case "tags": {
+				case ColNames.TAGS: {
 					// Need to add or remove based on what we already have?
 					// Or does add/remove ignore duplicate calls. Trying this first.....
 					if (values.get("value").toString().toString().startsWith("-")) {
@@ -892,7 +893,7 @@ public class LeanKitAccess {
 					}
 					break;
 				}
-				case "assignedUsers": {
+				case ColNames.ASSIGNED_USERS: {
 					// Need to add or remove based on what we already have?
 					// Or does add/remove ignore duplicate calls. Trying this first.....
 					if (values.get("value").toString().startsWith("-")) {
@@ -910,7 +911,7 @@ public class LeanKitAccess {
 					}
 					break;
 				}
-				case "externalLink": {
+				case ColNames.EXTERNAL_LINK: {
 					JSONObject link = new JSONObject();
 					JSONObject upd = new JSONObject();
 					String[] bits = values.get("value").toString().split(",");
@@ -927,7 +928,7 @@ public class LeanKitAccess {
 					jsa.put(upd);
 					break;
 				}
-				case "customIcon": {
+				case ColNames.CUSTOM_ICON: {
 					if (brd.classOfServiceEnabled) {
 						if (brd.classesOfService != null) {
 							for (int i = 0; i < brd.classesOfService.length; i++) {
@@ -953,7 +954,7 @@ public class LeanKitAccess {
 					postComment(card.id, values.get("value").toString());
 					break;
 				}
-				case "index": {
+				case ColNames.INDEX: {
 					prioritiseCard(card, values.getInt("value"));
 				}
 				case "Task": {
@@ -980,7 +981,7 @@ public class LeanKitAccess {
 					break;
 				}
 				// Mismatch between UI and database in LK.
-				case "priority": {
+				case ColNames.PRIORITY: {
 					JSONObject upd = new JSONObject();
 					upd.put("op", "replace");
 					upd.put("path", "/" + key);

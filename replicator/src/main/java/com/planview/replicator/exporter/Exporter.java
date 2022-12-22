@@ -11,6 +11,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
 
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.FormulaEvaluator;
@@ -235,15 +236,34 @@ public class Exporter {
 		}
 
 		/**
-		 * Scan the ignore type cards so we can move them to the right place
+		 * Scan the ignore type cards so we can move them to the right place and update all fields
 		 */
 		Iterator<Row> rowItr = addModifyRows.iterator();
 		while (rowItr.hasNext()) {
 			Row row = rowItr.next();
-			Integer col = XlUtils.findColumnFromSheet(cfg.itemSheet, ColNames.LANE);
-			String letter = CellReference.convertNumToColString(col);
-			createChangeRow(chgRowIdx++, row.getRowNum(), "Modify", ColNames.LANE,
-					"='" + cfg.itemSheet.getSheetName() + "'!" + letter + (row.getRowNum() + 1));
+			short numCells = row.getLastCellNum();
+			Row iFirst = cfg.itemSheet.getRow(0);
+
+			String[] lanesToIgnore = {
+				ColNames.ID,
+				ColNames.SOURCE_ID,
+				ColNames.TITLE,
+				ColNames.TYPE,
+				ColNames.PLANNED_END,
+				ColNames.PLANNED_START
+			};
+
+			for (int i = 0; i < numCells; i++) {
+				String fieldName = iFirst.getCell(i).getStringCellValue();
+				if (ArrayUtils.contains(lanesToIgnore, fieldName)){
+					continue;
+				}
+				String letter = CellReference.convertNumToColString(i);
+				d.p(Debug.INFO, "Creating Modify row for: %s on %s\n",
+					fieldName, row.getCell(XlUtils.findColumnFromName(iFirst, ColNames.TITLE)));
+				createChangeRow(chgRowIdx++, row.getRowNum(), "Modify", fieldName,
+						"='" + cfg.itemSheet.getSheetName() + "'!" + letter + (row.getRowNum() + 1));
+			}
 		}
 		/**
 		 * Now scan the parent/child register and add "Modify" lines
