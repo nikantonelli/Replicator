@@ -444,23 +444,21 @@ public class Exporter {
 						break;
 					}
 
-					case "externalLink": {
+					case ColNames.EXTERNAL_LINK: {
 						Object fv = c.getClass().getField("externalLinks").get(c);
 						if (fv != null) {
 							ExternalLink[] extlnks = (ExternalLink[]) fv;
 							if ((extlnks.length > 0) && (extlnks[0].url != null)) {
-								if (extlnks[0].label != null) {
+								if ((extlnks[0].label != null) && (extlnks[0].url != null) && (extlnks[0].url.length() != 0)) {
 									iRow.createCell(fieldCounter, CellType.STRING)
 											.setCellValue(extlnks[0].label.replace(",", " ") + "," + extlnks[0].url);
-								} else {
-									iRow.createCell(fieldCounter, CellType.STRING).setCellValue("," + extlnks[0].url);
-								}
+								} 
 							}
 						}
 						fieldCounter++;
 						break;
 					}
-					case "lane": {
+					case ColNames.LANE: {
 						Object fv = c.getClass().getField(pbFields[i]).get(c);
 						if (fv != null) { // Might be a task
 							CardType ct = LkUtils.getCardTypeFromBoard(cfg, cfg.source, c.type.title,
@@ -626,8 +624,10 @@ public class Exporter {
 								if (foundField.value != null) {
 									switch (foundField.type) {
 										case "number": {
+											Double number = Double.parseDouble((String) foundField.value);
 											iRow.createCell(fieldCounter, CellType.NUMERIC)
-													.setCellValue(Integer.parseInt((String) foundField.value));
+//													.setCellValue(Integer.parseInt((String) foundField.value));
+													.setCellValue(number);
 											break;
 										}
 										default: {
