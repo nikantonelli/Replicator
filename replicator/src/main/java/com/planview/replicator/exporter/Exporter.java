@@ -247,7 +247,7 @@ public class Exporter {
 			// Modify lines.
 			short numCells = row.getLastCellNum();
 
-			String[] lanesToIgnore = {
+			String[] colsToIgnore = {
 					// These are internal
 					ColNames.ID,
 					ColNames.SOURCE_ID,
@@ -264,7 +264,7 @@ public class Exporter {
 					row.getCell(XlUtils.findColumnFromName(iFirst, ColNames.TITLE)));
 			for (int i = 0; i < numCells; i++) {
 				String fieldName = iFirst.getCell(i).getStringCellValue();
-				if (ArrayUtils.contains(lanesToIgnore, fieldName)) {
+				if (ArrayUtils.contains(colsToIgnore, fieldName)) {
 					continue;
 				}
 				String letter = CellReference.convertNumToColString(i);

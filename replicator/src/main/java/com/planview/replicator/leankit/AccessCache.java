@@ -226,8 +226,10 @@ public class AccessCache {
 		if (users == null) {
 			LeanKitAccess lka = new LeanKitAccess(accessCfg, iCfg.debugLevel);
 			Board brd = boardMap.get(accessCfg.BoardName);
-			if (brd == null) lka.fetchBoardFromTitle(accessCfg.BoardName);
-			users = lka.fetchUsers(brd.id);
+			if (brd == null) {
+				brd = lka.fetchBoardFromTitle(accessCfg.BoardName);
+				if ( brd != null) users = lka.fetchUsers(brd.id);
+			}
 			if (users != null) {
 				setBoardUsers(accessCfg.BoardName, users);
 			}

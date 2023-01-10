@@ -1,12 +1,17 @@
 package com.planview.replicator;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 
+import org.apache.commons.lang.ArrayUtils;
+import org.json.JSONArray;
 import org.json.JSONObject;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.planview.replicator.leankit.Board;
+import com.planview.replicator.leankit.BoardLevel;
 import com.planview.replicator.leankit.BoardUser;
 import com.planview.replicator.leankit.Card;
 import com.planview.replicator.leankit.CardType;
@@ -430,6 +435,11 @@ public class LkUtils {
 		return user;
 	}
 
+	public static ArrayList<BoardLevel> getBoardLevels(InternalConfig iCfg, Access accessCfg) {
+		LeanKitAccess lka = new LeanKitAccess(accessCfg, iCfg.debugLevel);
+		return lka.fetchBoardLevels();
+	}
+
 	public static CustomField getCustomField(InternalConfig iCfg, Access accessCfg, String name) {
 		CustomField[] cfs = LkUtils.getCustomFields(iCfg, accessCfg);
 		for (int j = 0; j < cfs.length; j++) {
@@ -568,12 +578,32 @@ public class LkUtils {
 	}
 
 	public static Board createBoard(InternalConfig cfg, Access accessCfg) {
-		LeanKitAccess lka = new LeanKitAccess(cfg.destination, cfg.debugLevel);
+		LeanKitAccess lka = new LeanKitAccess(accessCfg, cfg.debugLevel);
 		JSONObject details = new JSONObject();
-		details.put("title", cfg.destination.BoardName);
+		details.put("title", accessCfg.BoardName);
 		return lka.createBoard(details);
 	}
 
-	public static void createCustomIcon(InternalConfig cfg, Access destination, CustomIcon customIcon) {
+	public static Boolean enableCustomIcons(InternalConfig cfg, Access accessCfg){
+		LeanKitAccess lka = new LeanKitAccess(cfg.destination, cfg.debugLevel);
+		Board brd = lka.fetchBoardFromTitle(cfg.destination.BoardName);
+		Boolean state = lka.fetchCustomIcons(brd.id) != null;
+		if (brd != null) {
+			JSONObject details = new JSONObject();
+			details.put("enableCustomIcon", true);
+			LkUtils.updateBoard(cfg, accessCfg, brd.id, details);
+		}
+		return state;
+	}
+	public static void createCustomIcon(InternalConfig cfg, Access accessCfg, CustomIcon customIcon) {
+		JSONObject ci = new JSONObject(customIcon);
+		ci.remove("id");
+	}
+
+	public static void setBoardLevels(InternalConfig cfg, Access accessCfg, BoardLevel[] srcLevels) {
+		LeanKitAccess lka = new LeanKitAccess(accessCfg, cfg.debugLevel);
+		JSONObject levels = new JSONObject();
+		levels.put("boardLevels", srcLevels);
+		lka.updateBoardLevels(levels);
 	}
 }

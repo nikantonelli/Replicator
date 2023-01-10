@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
@@ -22,6 +23,7 @@ import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPatch;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.entity.mime.HttpMultipartMode;
@@ -92,55 +94,112 @@ public class LeanKitAccess {
 		}
 		JSONObject jresp = new JSONObject(bd);
 		// Convert to a type to return to caller.
-		if (bd != null) {
-			if (jresp.has("error") || jresp.has("statusCode")) {
-				d.p(Debug.ERROR, "\"%s\" gave response: \"%s\"\n", reqUrl, jresp.toString());
-				System.exit(1);
-			} else if (jresp.has("pageMeta")) {
-				JSONObject pageMeta = new JSONObject(jresp.get("pageMeta").toString());
 
-				int totalRecords = pageMeta.getInt("totalRecords");
+		if (jresp.has("error") || jresp.has("statusCode")) {
+			d.p(Debug.ERROR, "\"%s\" gave response: \"%s\"\n", reqUrl, jresp.toString());
+			System.exit(1);
+		} else if (jresp.has("pageMeta")) {
+			JSONObject pageMeta = new JSONObject(jresp.get("pageMeta").toString());
 
-				// Unfortunately, we need to know what sort of item to get out of the json
-				// object. Doh!
-				String fieldName = null;
-				ArrayList<T> items = new ArrayList<T>();
-				String[] typename = expectedResponseType.getName().split("\\.");
-				switch (typename[typename.length - 1]) {
-					case "Board":
-						fieldName = "boards";
-						break;
-					case "BoardUser":
-						fieldName = "boardUsers";
-						break;
-					case "User":
-						fieldName = "users";
-						break;
-					case "Card":
-					case "Task":
-						fieldName = "cards";
-						break;
-					case "Lane":
-						fieldName = "lanes";
-						break;
-					case "Comment":
-						fieldName = "comments";
-						break;
-					default:
-						d.p(Debug.ERROR, "Unsupported item type requested from server API: %s\n", bd);
-						return null;
+			int totalRecords = pageMeta.getInt("totalRecords");
 
+			// Unfortunately, we need to know what sort of item to get out of the json
+			// object. Doh!
+			String fieldName = null;
+			ArrayList<T> items = new ArrayList<T>();
+			String[] typename = expectedResponseType.getName().split("\\.");
+			switch (typename[typename.length - 1]) {
+				case "Board":
+					fieldName = "boards";
+					break;
+				case "BoardLevel":
+					fieldName = "boardLevels";
+					break;
+				case "BoardUser":
+					fieldName = "boardUsers";
+					break;
+				case "User":
+					fieldName = "users";
+					break;
+				case "Card":
+				case "Task":
+					fieldName = "cards";
+					break;
+				case "Lane":
+					fieldName = "lanes";
+					break;
+				case "Comment":
+					fieldName = "comments";
+					break;
+				default:
+					d.p(Debug.ERROR, "Unsupported item type requested from server API: %s\n", bd);
+					return null;
+			}
+			// Got something to return
+			ObjectMapper om = new ObjectMapper();
+			om.configure(DeserializationFeature.USE_JAVA_ARRAY_FOR_JSON_ARRAY, true);
+			om.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+			JSONArray p = (JSONArray) jresp.get(fieldName);
+			Integer accumulatedCount = pageMeta.getInt("endRow");
+
+			// if (accumulatedCount >= totalRecords) {
+			// Add the returned items to the array
+			for (int i = 0; i < p.length(); i++) {
+				try {
+					items.add(om.readValue(p.get(i).toString(), expectedResponseType));
+				} catch (JsonProcessingException | JSONException e) {
+					e.printStackTrace();
 				}
-				if (fieldName != null) {
-					// Got something to return
-					ObjectMapper om = new ObjectMapper();
-					om.configure(DeserializationFeature.USE_JAVA_ARRAY_FOR_JSON_ARRAY, true);
-					om.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-					JSONArray p = (JSONArray) jresp.get(fieldName);
-					Integer accumulatedCount = pageMeta.getInt("endRow");
+			}
+			// } else {
+			/**
+			 * We start off assuming that we begin at zero. If we find that there are less
+			 * than there are available, we have to redo the processRequest with new offset
+			 * and limit params
+			 */
+			// Length here may be limited to 200 by the API paging.
+			d.p(Debug.VERBOSE, "Received %d %s (out of %d)\n", accumulatedCount,
+					fieldName.substring(0,
+							((accumulatedCount > 1) ? fieldName.length() : fieldName.length() - 1)),
+					totalRecords);
+			if (totalRecords > accumulatedCount) {
 
-					// if (accumulatedCount >= totalRecords) {
-					// Add the returned items to the array
+				Iterator<NameValuePair> it = reqParams.iterator();
+				int acc = 0, offsetIdx = -1;
+				while (it.hasNext()) {
+					NameValuePair vp = it.next();
+					if (vp.getName() == "offset") {
+						offsetIdx = acc;
+						break;
+					}
+					acc++;
+				}
+
+				if (offsetIdx >= 0) {
+					reqParams.remove(offsetIdx);
+					reqParams.add(new BasicNameValuePair("offset", accumulatedCount.toString()));
+					/**
+					 * This is slightly dangerous as it is a recursive call to get more stuff.
+					 */
+					ArrayList<T> childItems = readRaw(expectedResponseType);
+					if (childItems != null) {
+						items.addAll(childItems);
+					}
+					accumulatedCount = items.size();
+				}
+			}
+			return items;
+		} else {
+			ArrayList<T> items = new ArrayList<T>();
+			ObjectMapper om = new ObjectMapper();
+			om.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+			switch (expectedResponseType.getSimpleName()) {
+				case "CardType":
+				case "Lane": {
+					// Getting CardTypes comes here, for example.
+					Iterator<String> sItor = jresp.keys();
+					String iStr = sItor.next();
+					JSONArray p = (JSONArray) jresp.get(iStr);
 					for (int i = 0; i < p.length(); i++) {
 						try {
 							items.add(om.readValue(p.get(i).toString(), expectedResponseType));
@@ -148,91 +207,44 @@ public class LeanKitAccess {
 							e.printStackTrace();
 						}
 					}
-					// } else {
-					/**
-					 * We start off assuming that we begin at zero. If we find that there are less
-					 * than there are available, we have to redo the processRequest with new offset
-					 * and limit params
-					 */
-					// Length here may be limited to 200 by the API paging.
-					d.p(Debug.VERBOSE, "Received %d %s (out of %d)\n", accumulatedCount,
-							fieldName.substring(0,
-									((accumulatedCount > 1) ? fieldName.length() : fieldName.length() - 1)),
-							totalRecords);
-					if (totalRecords > accumulatedCount) {
-
-						Iterator<NameValuePair> it = reqParams.iterator();
-						int acc = 0, offsetIdx = -1;
-						while (it.hasNext()) {
-							NameValuePair vp = it.next();
-							if (vp.getName() == "offset") {
-								offsetIdx = acc;
-								break;
-							}
-							acc++;
-						}
-
-						if (offsetIdx >= 0) {
-							reqParams.remove(offsetIdx);
-							reqParams.add(new BasicNameValuePair("offset", accumulatedCount.toString()));
-							/**
-							 * This is slightly dangerous as it is a recursive call to get more stuff.
-							 */
-							ArrayList<T> childItems = readRaw(expectedResponseType);
-							if (childItems != null) {
-								items.addAll(childItems);
-							}
-							accumulatedCount = items.size();
-						}
-					}
-					// }
-					return items;
+					break;
 				}
-
-			} else {
-				ArrayList<T> items = new ArrayList<T>();
-				ObjectMapper om = new ObjectMapper();
-				om.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-				switch (expectedResponseType.getSimpleName()) {
-					case "CardType":
-					case "Lane": {
-						// Getting CardTypes comes here, for example.
-						Iterator<String> sItor = jresp.keys();
-						String iStr = sItor.next();
-						JSONArray p = (JSONArray) jresp.get(iStr);
-						for (int i = 0; i < p.length(); i++) {
-							try {
-								items.add(om.readValue(p.get(i).toString(), expectedResponseType));
-							} catch (JsonProcessingException | JSONException e) {
-								e.printStackTrace();
-							}
+				// Returning a single item from a search for example
+				case "Board": {
+					try {
+						JSONObject bdj = new JSONObject(bd);
+						// Cannot process one of these if we don't know what's going to be in there!!!!
+						if (bdj.has("userSettings")) {
+							bdj.remove("userSettings");
 						}
-						break;
+						if (bdj.has("integrations")) {
+							bdj.remove("integrations");
+						}
+						items.add(om.readValue(bdj.toString(), expectedResponseType));
+					} catch (JsonProcessingException e) {
+						e.printStackTrace();
 					}
-					// Returning a single item from a search for example
-					case "Board": {
+					break;
+				}
+				case "BoardLevel": {
+					JSONObject bdj = new JSONObject(bd);
+					JSONArray bdlvls = (JSONArray) bdj.get("boardLevels");
+					for (int i = 0; i < bdlvls.length(); i++) {
 						try {
-							JSONObject bdj = new JSONObject(bd);
-							// Cannot process one of these if we don't know what's going to be in there!!!!
-							if (bdj.has("userSettings")) {
-								bdj.remove("userSettings");
-							}
-							if (bdj.has("integrations")) {
-								bdj.remove("integrations");
-							}
-							items.add(om.readValue(bdj.toString(), expectedResponseType));
-						} catch (JsonProcessingException e) {
+							items.add(om.readValue(bdlvls.get(i).toString(), expectedResponseType));
+						} catch (JsonProcessingException | JSONException e) {
 							e.printStackTrace();
 						}
-						break;
 					}
-					default: {
-						d.p(Debug.ERROR, "oops! don't recognise requested item type\n");
-						System.exit(2);
-					}
+					break;
 				}
-				return items;
+				default: {
+					d.p(Debug.ERROR, "oops! don't recognise requested item type \"%s\"\n",
+							expectedResponseType.getSimpleName());
+					System.exit(2);
+				}
 			}
+			return items;
 		}
 		return null;
 	}
@@ -302,6 +314,11 @@ public class LeanKitAccess {
 					((HttpPost) request).setEntity(reqEnt);
 					break;
 				}
+				case "PUT": {
+					request = new HttpPut(reqUrl);
+					((HttpPut) request).setEntity(reqEnt);
+					break;
+				}
 				case "DELETE": {
 					request = new HttpDelete(reqUrl);
 					break;
@@ -330,6 +347,9 @@ public class LeanKitAccess {
 			}
 			request.setURI(new URI(config.Url + reqUrl + bldr));
 			d.p(Debug.VERBOSE, "%s\n", request.toString());
+			if (reqEnt != null) { 
+				d.p(Debug.VERBOSE, "Content: %s\n",IOUtils.toString(reqEnt.getContent(), "UTF-8")); 
+			}
 			httpResponse = client.execute(request);
 			d.p(Debug.VERBOSE, "%s\n", httpResponse.getStatusLine());
 
@@ -359,9 +379,9 @@ public class LeanKitAccess {
 					break;
 				}
 				case 429: { // Flow control
-					LocalDateTime retryAfter = LocalDateTime.parse(httpResponse.getHeaders("retry-after")[0].getValue(),
+					LocalDateTime retryAfter = LocalDateTime.parse(httpResponse.getFirstHeader("retry-after").getValue(),
 							DateTimeFormatter.RFC_1123_DATE_TIME);
-					LocalDateTime serverTime = LocalDateTime.parse(httpResponse.getHeaders("date")[0].getValue(),
+					LocalDateTime serverTime = LocalDateTime.parse(httpResponse.getFirstHeader("date").getValue(),
 							DateTimeFormatter.RFC_1123_DATE_TIME);
 					Long timeDiff = ChronoUnit.MILLIS.between(serverTime, retryAfter);
 					d.p(Debug.INFO, "Received 429 status. waiting %.2f seconds\n", ((1.0 * timeDiff) / 1000.0));
@@ -417,6 +437,15 @@ public class LeanKitAccess {
 			e1.printStackTrace();
 		}
 		return result;
+	}
+
+	public ArrayList<BoardLevel> fetchBoardLevels() {
+		reqType = "GET";
+		reqUrl = "/io/boardLevel";
+		reqParams.clear();
+		reqHdrs.clear();
+		ArrayList<BoardLevel> levels = read(BoardLevel.class);
+		return levels;
 	}
 
 	public ArrayList<CardType> fetchCardTypes(String boardId) {
@@ -574,12 +603,12 @@ public class LeanKitAccess {
 			return null;
 		}
 		ArrayList<Board> boards = read(Board.class);
-		for (int i = 0; i < boards.size(); i++){
-			if (boards.get(i).title.equals(BoardName)){
+		for (int i = 0; i < boards.size(); i++) {
+			if (boards.get(i).title.equals(BoardName)) {
 				return boards.get(i);
 			}
 		}
-		return null ;
+		return null;
 	}
 
 	public Board fetchBoardFromId(String id) {
@@ -760,12 +789,12 @@ public class LeanKitAccess {
 		reqParams.add(new BasicNameValuePair("search", encoded));
 		reqParams.add(new BasicNameValuePair("board", boardId));
 		ArrayList<Card> cards = read(Card.class);
-		for (int i = 0; i < cards.size(); i++){
-			if (cards.get(i).title.equals(title)){
+		for (int i = 0; i < cards.size(); i++) {
+			if (cards.get(i).title.equals(title)) {
 				return cards.get(i);
 			}
 		}
-		return null ;
+		return null;
 	}
 
 	public ArrayList<BoardUser> fetchUsers(String boardId) {
@@ -1065,5 +1094,14 @@ public class LeanKitAccess {
 			e.printStackTrace();
 		}
 		return null;
+	}
+
+	public LevelIds updateBoardLevels(JSONObject levels) {
+		reqType = "PUT";
+		reqUrl = "/io/boardLevel/";
+		reqParams.clear();
+		reqHdrs.clear();
+		reqEnt = new StringEntity(levels.toString(), "UTF-8");
+		return execute(LevelIds.class);
 	}
 }

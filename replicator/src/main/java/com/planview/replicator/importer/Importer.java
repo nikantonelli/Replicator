@@ -5,7 +5,6 @@ import java.util.Date;
 import java.util.Iterator;
 
 import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.util.CellReference;
 import org.apache.poi.xssf.usermodel.XSSFFormulaEvaluator;
@@ -26,7 +25,6 @@ import com.planview.replicator.leankit.Card;
 import com.planview.replicator.leankit.CustomField;
 import com.planview.replicator.leankit.CustomIcon;
 import com.planview.replicator.leankit.Lane;
-import com.planview.replicator.leankit.User;
 
 public class Importer {
 	Debug d = new Debug();
@@ -52,8 +50,16 @@ public class Importer {
 		cfg.changesSheet = cfg.wb
 				.getSheet(XlUtils.validateSheetName(InternalConfig.CHANGES_SHEET_NAME + cfg.source.BoardName));
 
+		//Check for source information
 		if (null == cfg.changesSheet) {
-			d.p(Debug.ERROR, "Cannot find required Changes sheet in file: %s\n", cfg.xlsxfn);
+			d.p(Debug.ERROR, "Cannot find required Changes sheet in file: \"%s\" Have you done the export?\n", cfg.xlsxfn);
+			System.exit(1);
+		}
+
+		//Check for destination information - i.e. does destination exist?
+		Board brd = LkUtils.getBoardByTitle(cfg, cfg.destination);
+		if (brd == null) {
+			d.p(Debug.ERROR, "Cannot find required destination board shown in file: \"%s\" Do you need -r (remake) option?\n", cfg.destination.BoardName);
 			System.exit(1);
 		}
 		ChangesColumns cc = XlUtils.checkChangeSheetColumns(cfg.changesSheet);
