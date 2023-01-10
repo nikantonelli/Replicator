@@ -595,9 +595,13 @@ public class LkUtils {
 		}
 		return state;
 	}
-	public static void createCustomIcon(InternalConfig cfg, Access accessCfg, CustomIcon customIcon) {
+	public static CustomIcon createCustomIcon(InternalConfig cfg, Access accessCfg, CustomIcon customIcon) {
+		LeanKitAccess lka = new LeanKitAccess(accessCfg, cfg.debugLevel);
+		Board brd = lka.fetchBoardFromTitle(cfg.destination.BoardName);
 		JSONObject ci = new JSONObject(customIcon);
 		ci.remove("id");
+		ci.remove("iconPath");
+		return lka.createCustomIcon(brd.id, ci);
 	}
 
 	public static void setBoardLevels(InternalConfig cfg, Access accessCfg, BoardLevel[] srcLevels) {

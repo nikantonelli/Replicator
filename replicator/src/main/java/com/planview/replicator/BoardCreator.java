@@ -51,21 +51,11 @@ public class BoardCreator {
 			// Here, we have to copy across all the set up of the original board
 			Board srcBrd = LkUtils.getBoardByTitle(cfg, cfg.source);
 			if (srcBrd != null) {
-				// Create a blank board
+				// Create a blank board if needed
 				Board dstBrd = LkUtils.getBoardByTitle(cfg, cfg.destination);
-				;
-				if (dstBrd != null) {
-
-					//TODO: For now, archive the board but, we will need to change this to 'update'
-
-					// Move the original board away, but give it a date added to the title
-					JSONObject updates = new JSONObject();
-					//None of that stupid backwards US dates stuff! This way they are ordered correctly in LK.
-					DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-					updates.put("title", dstBrd.title + " " + (LocalDate.now()).format(dateFormatter));
-					LkUtils.archiveBoardById(cfg, cfg.destination, dstBrd.id);
+				if (dstBrd == null) {
+					dstBrd = LkUtils.createBoard(cfg, cfg.destination);
 				}
-				dstBrd = LkUtils.createBoard(cfg, cfg.destination);
 				if (dstBrd == null) {
 					d.p(Debug.ERROR, "Cannot create destination board \"%s\" ... skipping\n",
 							cfg.destination.BoardName);
@@ -92,9 +82,10 @@ public class BoardCreator {
 				if (gotDstLevels != srcLevels.size()) {
 					d.p(Debug.WARN, "Mismatch between source and destination board levels - resetting destination\n");
 					BoardLevel[] bla = {};
-					for (int i = 0; i < srcLevels.size(); i++){
+					for (int i = 0; i < srcLevels.size(); i++) {
 						BoardLevel current = srcLevels.get(i);
-						bla = (BoardLevel[]) ArrayUtils.add(bla, new BoardLevel( current.depth, current.label, current.color));
+						bla = (BoardLevel[]) ArrayUtils.add(bla,
+								new BoardLevel(current.depth, current.label, current.color));
 					}
 					LkUtils.setBoardLevels(cfg, cfg.destination, bla);
 					details.put("boardLevel", srcBrd.level.depth);
@@ -116,16 +107,17 @@ public class BoardCreator {
 				Integer[] unMatched = {};
 				for (int i = 0; i < srcIcons.length; i++) {
 					boolean matched = false;
-					//If we have them, check to see if it is the same name ('unique' identifier on LK)
+					// If we have them, check to see if it is the same name ('unique' identifier on
+					// LK)
 					if (dstIcons != null) {
 						for (int j = 0; j < dstIcons.length; j++) {
 							if (dstIcons[j].name.equals(srcIcons[i].name)) {
-								//TODO: Match the iconPath as well?
+								// TODO: Match the iconPath as well?
 								matchedIcons++;
 								matched = true;
 								break;
 							} else {
-								ArrayUtils.add(unMatched, j);
+								unMatched = (Integer[]) ArrayUtils.add(unMatched, j);
 							}
 						}
 					}

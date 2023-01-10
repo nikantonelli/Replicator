@@ -444,6 +444,7 @@ public class LeanKitAccess {
 		reqUrl = "/io/boardLevel";
 		reqParams.clear();
 		reqHdrs.clear();
+		reqEnt = null;
 		ArrayList<BoardLevel> levels = read(BoardLevel.class);
 		return levels;
 	}
@@ -453,6 +454,7 @@ public class LeanKitAccess {
 		reqUrl = "/io/board/" + boardId + "/cardType";
 		reqParams.clear();
 		reqHdrs.clear();
+		reqEnt = null;
 		reqParams.add(new BasicNameValuePair("limit", "200"));
 		reqParams.add(new BasicNameValuePair("offset", "0"));
 		ArrayList<CardType> brd = read(CardType.class);
@@ -469,6 +471,7 @@ public class LeanKitAccess {
 		reqUrl = "/io/board/" + boardId + "/";
 		reqParams.clear();
 		reqHdrs.clear();
+		reqEnt = null;
 		ArrayList<Board> brd = read(Board.class);
 		if (brd != null) {
 			if (brd.size() > 0) {
@@ -483,6 +486,7 @@ public class LeanKitAccess {
 		reqUrl = "/io/card/" + cardId + "/taskboard";
 		reqParams.clear();
 		reqHdrs.clear();
+		reqEnt = null;
 		ArrayList<Lane> lanes = read(Lane.class);
 		return lanes;
 	}
@@ -492,6 +496,7 @@ public class LeanKitAccess {
 		reqUrl = "io/card/" + cardId + "/tasks";
 		reqParams.clear();
 		reqHdrs.clear();
+		reqEnt = null;
 		reqParams.add(new BasicNameValuePair("limit", "200"));
 		reqParams.add(new BasicNameValuePair("offset", "0"));
 		ArrayList<Task> tasks = read(Task.class);
@@ -504,6 +509,7 @@ public class LeanKitAccess {
 		reqParams.clear();
 		reqParams.add(new BasicNameValuePair("only", "id"));
 		reqHdrs.clear();
+		reqEnt = null;
 		reqParams.add(new BasicNameValuePair("limit", "200"));
 		reqParams.add(new BasicNameValuePair("offset", "0"));
 		ArrayList<Task> tasks = read(Task.class);
@@ -515,6 +521,7 @@ public class LeanKitAccess {
 		reqHdrs.clear();
 		reqType = "GET";
 		reqUrl = "/io/board";
+		reqEnt = null;
 		reqParams.add(new BasicNameValuePair("search", name));
 
 		// Once you get the boards, you could cache them. There may be loads, but
@@ -537,6 +544,7 @@ public class LeanKitAccess {
 		reqUrl = "/io/board/" + id + "/archive";
 		reqParams.clear();
 		reqHdrs.clear();
+		reqEnt = null;
 		return processRequest();
 	}
 
@@ -545,6 +553,7 @@ public class LeanKitAccess {
 		reqHdrs.clear();
 		reqParams.clear();
 		reqUrl = "/io/card/" + id;
+		reqEnt = null;
 		return processRequest();
 	}
 
@@ -553,6 +562,7 @@ public class LeanKitAccess {
 		reqHdrs.clear();
 		reqParams.clear();
 		reqUrl = "/io/board/" + id;
+		reqEnt = null;
 		return processRequest();
 	}
 
@@ -563,6 +573,7 @@ public class LeanKitAccess {
 		reqParams.add(new BasicNameValuePair("offset", "0"));
 		reqType = "GET";
 		reqUrl = "/io/card/" + cd.id + "/comment";
+		reqEnt = null;
 		return read(Comment.class);
 	}
 
@@ -582,6 +593,7 @@ public class LeanKitAccess {
 		reqHdrs.clear();
 		reqType = "GET";
 		reqUrl = "/io/card";
+		reqEnt = null;
 		if (includeArchived) {
 			reqParams.add(new BasicNameValuePair("lane_class_types", "backlog,active,archive"));
 			reqParams.add(new BasicNameValuePair("deleted", "0"));
@@ -596,6 +608,7 @@ public class LeanKitAccess {
 		reqType = "GET";
 		reqParams.clear();
 		reqHdrs.clear();
+		reqEnt = null;
 		try {
 			reqUrl = "/io/board?search=" + URLEncoder.encode(BoardName, "UTF-8");
 		} catch (UnsupportedEncodingException e) {
@@ -616,6 +629,7 @@ public class LeanKitAccess {
 		reqParams.clear();
 		reqHdrs.clear();
 		reqUrl = "/io/board/" + id;
+		reqEnt = null;
 		reqParams.add(new BasicNameValuePair("returnFullRecord", "true"));
 
 		ArrayList<Board> results = read(Board.class);
@@ -629,6 +643,7 @@ public class LeanKitAccess {
 		reqType = "GET";
 		reqParams.clear();
 		reqHdrs.clear();
+		reqEnt = null;
 		reqUrl = "/io/card/" + cardId + "/attachment/" + attId + "/content";
 
 		HttpEntity he = processRawRequest();
@@ -1103,5 +1118,14 @@ public class LeanKitAccess {
 		reqHdrs.clear();
 		reqEnt = new StringEntity(levels.toString(), "UTF-8");
 		return execute(LevelIds.class);
+	}
+
+	public CustomIcon createCustomIcon(String bId, JSONObject ci) {
+		reqType = "POST";
+		reqUrl = "/io/board/" + bId + "/customIcon";
+		reqParams.clear();
+		reqHdrs.clear();
+		reqEnt = new StringEntity(ci.toString(), "UTF-8");
+		return execute(CustomIcon.class);
 	}
 }
