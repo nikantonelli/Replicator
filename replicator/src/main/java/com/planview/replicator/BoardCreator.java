@@ -1,7 +1,5 @@
 package com.planview.replicator;
 
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 
 import org.apache.commons.lang.ArrayUtils;
@@ -63,11 +61,16 @@ public class BoardCreator {
 				}
 				details.put("allowUsersToDeleteCards", srcBrd.allowUsersToDeleteCards);
 				details.put("baseWipOnCardSize", srcBrd.baseWipOnCardSize);
-				details.put("classOfServiceEnabled", srcBrd.classOfServiceEnabled);
+				details.put("enableCustomIcon", srcBrd.classOfServiceEnabled);
 				details.put("customIconFieldLabel", srcBrd.customIconFieldLabel);
 				details.put("description", srcBrd.description);
 
-				// Check for correct board level
+				/**
+				 * 
+				 * Check for correct board levels
+				 * 
+				 *  
+				 **/ 
 				ArrayList<BoardLevel> srcLevels = LkUtils.getBoardLevels(cfg, cfg.source);
 				ArrayList<BoardLevel> dstLevels = LkUtils.getBoardLevels(cfg, cfg.destination);
 
@@ -92,7 +95,14 @@ public class BoardCreator {
 
 				}
 
-				// Fetch the customIcons on the source, if there are some, then set enable on
+				/**
+				 * 
+				 * Check for correct customIcons
+				 * 
+				 *  
+				 **/ 
+				
+				 // Fetch the customIcons on the source, if there are some, then set enable on
 				// destination - this shouldn't affect any boards that already have customIcons
 				CustomIcon[] srcIcons = LkUtils.getCustomIcons(cfg, cfg.source);
 				if (srcIcons != null) {
@@ -112,7 +122,6 @@ public class BoardCreator {
 					if (dstIcons != null) {
 						for (int j = 0; j < dstIcons.length; j++) {
 							if (dstIcons[j].name.equals(srcIcons[i].name)) {
-								// TODO: Match the iconPath as well?
 								matchedIcons++;
 								matched = true;
 								break;
@@ -126,6 +135,13 @@ public class BoardCreator {
 						d.p(Debug.WARN, "Creating Icon %s on %s\n", srcIcons[i].name, cfg.destination.BoardName);
 					}
 				}
+
+				/**
+				 * 
+				 * Push all the remaining updates
+				 * 
+				 */
+				LkUtils.updateBoard(cfg, cfg.destination, dstBrd.id, details);
 			} else {
 				d.p(Debug.ERROR,
 						"Cannot locate source boards \"%s\" for creation of destination \"%s\" .... skipping\n",

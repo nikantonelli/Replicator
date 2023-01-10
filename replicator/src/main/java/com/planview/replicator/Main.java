@@ -105,7 +105,7 @@ public class Main {
 					bd.go();
 				}
 
-				if (config.remakeBoard) {
+				if ((config.remakeBoard) || (config.updateLayout)){
 					BoardCreator bd = new BoardCreator(config);
 					ok = bd.go();
 				}
